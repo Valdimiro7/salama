@@ -140,16 +140,16 @@
                 <div class="collapse" id="menu-contas">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> CC </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Conta dos Clientes </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:client_account_list' %}">
+                            <span class="sidenav-mini-icon"> CC </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Conta dos Clientes </span>
+                        </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> CE </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Conta da Empresa </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:company_account_list' %}">
+                            <span class="sidenav-mini-icon"> CE </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Conta da Empresa </span>
+                        </a>
                         </li>
                         <li class="nav-item">
                         <a class="nav-link text-dark" href="{% url 'core:account_type_list' %}">

@@ -1,0 +1,180 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
+            <h6 class="text-white text-capitalize ps-3">Contas da Empresa</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Contas da Salama para Recebimentos</h6>
+                <p class="text-sm text-muted mb-0">
+                  Contas onde os clientes irão enviar dinheiro (banco, carteira móvel, cash, etc.).
+                </p>
+              </div>
+              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addCompanyAccountModal">
+                <i class="material-symbols-rounded me-1">domain_add</i>
+                Adicionar Conta da Empresa
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table id="company-accounts-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tipo de Conta</th>
+                    <th>Nome</th>
+                    <th>Identificador</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in accounts %}
+                  <tr>
+                    <td>{{ a.id }}</td>
+                    <td>{{ a.account_type.get_category_display }} - {{ a.account_type.name }}</td>
+                    <td>{{ a.name }}</td>
+                    <td>{{ a.account_identifier }}</td>
+                    <td>
+                      {% if a.is_active %}
+                        <span class="badge bg-success text-white">Activo</span>
+                      {% else %}
+                        <span class="badge bg-secondary text-white">Inactivo</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+</div>
+
+<!-- MODAL: ADICIONAR CONTA DA EMPRESA -->
+<div class="modal fade" id="addCompanyAccountModal" tabindex="-1" aria-labelledby="addCompanyAccountModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addCompanyAccountForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addCompanyAccountModalLabel">Nova Conta da Empresa</h5>
+          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <div class="input-group input-group-outline">
+              <label class="form-label">Tipo de Conta *</label>
+              <select class="form-select" name="account_type" id="id_company_account_type">
+                <option value="">— Seleccione —</option>
+                {% for t in account_types %}
+                  <option value="{{ t.id }}">
+                    {{ t.get_category_display }} - {{ t.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="input-group input-group-outline">
+              <label class="form-label">Nome da Conta *</label>
+              <input type="text" class="form-control" name="name" id="id_company_name" placeholder="Ex: Conta BCI MZN - Salama">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="input-group input-group-outline">
+              <label class="form-label">Número / Celular / NIB *</label>
+              <input type="text" class="form-control" name="account_identifier" id="id_company_identifier">
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables -->
+
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      $('#company-accounts-table').DataTable({
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[0, 'asc']],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+
+      $('#addCompanyAccountForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const accountType = $('#id_company_account_type').val();
+        const name = $('#id_company_name').val().trim();
+        const identifier = $('#id_company_identifier').val().trim();
+
+        if (!accountType || !name || !identifier) {
+          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
+          return;
+        }
+
+        $.ajax({
+          url: "{% url 'core:create_company_account' %}",
+          type: "POST",
+          data: $(this).serialize(),
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          success: function (resp) {
+            if (resp.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Criada",
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => {
+                window.location.reload();
+              });
+            } else {
+              Swal.fire("Erro", resp.message || "Falha ao criar conta.", "error");
+            }
+          },
+          error: function (xhr) {
+            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar conta.", "error");
+          }
+        });
+      });
+    });
+  </script>
+{% endblock extra_js %}
