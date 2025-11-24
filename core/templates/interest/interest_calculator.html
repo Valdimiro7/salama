@@ -1,0 +1,391 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
+            <h6 class="text-white text-capitalize ps-3">Cálculo de Juros</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+            <div class="row g-4">
+              <!-- FORMULÁRIO DE SIMULAÇÃO -->
+              <div class="col-lg-4">
+                <h6 class="mb-3">Simulador de Microcrédito (Taxa Fixa sobre Saldo)</h6>
+
+                <form id="interestCalcForm">
+                  {% csrf_token %}
+
+                  <div class="mb-3">
+                    <label class="form-label">Tipo de Juro *</label>
+                    <div class="input-group input-group-outline">
+                      <select class="form-select" name="interest_type" id="id_interest_type">
+                        <option value="">— Seleccione —</option>
+                        {% for it in interest_types %}
+                          <option value="{{ it.id }}"
+                                  data-rate="{{ it.rate }}"
+                                  data-period-type="{{ it.period_type }}"
+                                  data-method="{{ it.calculation_method }}">
+                            {{ it.name }} ({{ it.rate|floatformat:2 }}% / {{ it.get_period_type_display }})
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Valor do Empréstimo (MT) *</label>
+                    <div class="input-group input-group-outline">
+                      <input type="number" step="0.01" class="form-control" id="id_principal" name="principal" placeholder="Ex: 10 000">
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Modo de Cálculo *</label>
+                    <div class="input-group input-group-outline">
+                      <select class="form-select" id="id_mode" name="mode">
+                        <option value="monthly">Mensal (número de meses)</option>
+                        <option value="daily">Diário (número de dias)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="mb-3" id="months-wrapper">
+                    <label class="form-label">Número de Meses *</label>
+                    <div class="input-group input-group-outline">
+                      <input type="number" min="1" class="form-control" id="id_months" name="months" placeholder="Ex: 3">
+                    </div>
+                  </div>
+
+                  <div class="mb-3 d-none" id="days-wrapper">
+                    <label class="form-label">Número de Dias *</label>
+                    <div class="input-group input-group-outline">
+                      <input type="number" min="1" class="form-control" id="id_days" name="days" placeholder="Ex: 30">
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Pagamento por ciclo (MT) *</label>
+                    <div class="input-group input-group-outline">
+                      <input type="number" step="0.01" class="form-control" id="id_payment" name="payment"
+                             placeholder="Será calculado automaticamente, mas pode ser ajustado.">
+                    </div>
+
+                  </div>
+
+                  <button type="submit" class="btn bg-gradient-dark w-100 mt-2">
+                    <i class="material-symbols-rounded me-1">calculate</i>
+                    Calcular
+                  </button>
+                </form>
+
+                <!-- RESUMO -->
+                <div class="mt-4" id="calcSummary" style="display:none;">
+                  <h6>Resumo da Simulação</h6>
+                  <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>Valor do Empréstimo:</span>
+                      <strong id="sumPrincipal">MT 0,00</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>Juros Totais Pagos:</span>
+                      <strong id="sumInterest">MT 0,00</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>Total Pago:</span>
+                      <strong id="sumTotalPaid">MT 0,00</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>Saldo Final em Dívida:</span>
+                      <strong id="sumRemaining">MT 0,00</strong>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- TABELA DE SIMULAÇÃO -->
+              <div class="col-lg-8">
+                <h6 class="mb-3">Simulação por Ciclo (Taxa Fixa sobre Saldo)</h6>
+                <div class="table-responsive">
+                  <table id="schedule-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Período</th>
+                        <th>Saldo Inicial</th>
+                        <th>Juros do Ciclo</th>
+                        <th>Pagamento</th>
+                        <th>Amortização</th>
+                        <th>Saldo Final</th>
+                        <th>Obs</th>
+                      </tr>
+                    </thead>
+                    <tbody id="schedule-body">
+                      <!-- preenchido via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div> <!-- /row -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    function formatMoney(value) {
+      const n = Number(value || 0);
+      return 'MT ' + n.toLocaleString('pt-PT', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    // Sugestão de pagamento por ciclo (amortização clássica)
+    function sugerirPagamentoPorCiclo(principal, r, periods) {
+      if (periods <= 0) return 0;
+      if (r === 0) {
+        return principal / periods;
+      }
+      const pow = Math.pow(1 + r, periods);
+      const pmt = principal * (r * pow) / (pow - 1);
+      return pmt;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const modeSelect = document.getElementById('id_mode');
+      const monthsWrapper = document.getElementById('months-wrapper');
+      const daysWrapper = document.getElementById('days-wrapper');
+      const principalInput = document.getElementById('id_principal');
+      const monthsInput = document.getElementById('id_months');
+      const daysInput = document.getElementById('id_days');
+      const paymentInput = document.getElementById('id_payment');
+      const interestSelect = document.getElementById('id_interest_type');
+
+      // DataTable para o quadro
+      const scheduleTable = $('#schedule-table').DataTable({
+        paging: true,
+        searching: false,
+        info: false,
+        ordering: false,
+        pageLength: 12,
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+
+      // Alternar meses/dias
+      modeSelect.addEventListener('change', function () {
+        if (this.value === 'monthly') {
+          monthsWrapper.classList.remove('d-none');
+          daysWrapper.classList.add('d-none');
+        } else {
+          daysWrapper.classList.remove('d-none');
+          monthsWrapper.classList.add('d-none');
+        }
+        // Recalcular sugestão se possível
+        autoSuggestPayment();
+      });
+
+      // Sempre que mudam estes campos, tentamos sugerir pagamento
+      [principalInput, monthsInput, daysInput, interestSelect].forEach(el => {
+        el.addEventListener('change', autoSuggestPayment);
+        el.addEventListener('blur', autoSuggestPayment);
+      });
+
+      function autoSuggestPayment() {
+        const principalRaw = principalInput.value.trim();
+        if (!principalRaw) return;
+
+        const principal = Number(principalRaw);
+        if (principal <= 0) return;
+
+        const selectedOption = interestSelect.options[interestSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) return;
+
+        const ratePercent = Number(selectedOption.dataset.rate || 0);
+        if (ratePercent < 0) return;
+
+        const mode = modeSelect.value;
+        let periods = 0;
+        if (mode === 'monthly') {
+          const m = monthsInput.value.trim();
+          if (!m || Number(m) <= 0) return;
+          periods = Number(m);
+        } else {
+          const d = daysInput.value.trim();
+          if (!d || Number(d) <= 0) return;
+          periods = Number(d);
+        }
+
+        const r = ratePercent / 100.0;
+        const suggested = sugerirPagamentoPorCiclo(principal, r, periods);
+        if (suggested > 0 && !isNaN(suggested)) {
+          paymentInput.value = suggested.toFixed(2);
+        }
+      }
+
+      $('#interestCalcForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const selectedOption = interestSelect.options[interestSelect.selectedIndex];
+
+        const principalRaw = principalInput.value.trim();
+        const mode = modeSelect.value;
+        const paymentRaw = paymentInput.value.trim();
+
+        if (!selectedOption.value) {
+          Swal.fire('Validação', 'Selecione um tipo de juro.', 'warning');
+          return;
+        }
+        if (!principalRaw) {
+          Swal.fire('Validação', 'Informe o valor do empréstimo.', 'warning');
+          return;
+        }
+        if (!paymentRaw) {
+          Swal.fire('Validação', 'Informe o pagamento por ciclo (pode usar o valor sugerido).', 'warning');
+          return;
+        }
+
+        let periods = 0;
+        if (mode === 'monthly') {
+          const months = monthsInput.value.trim();
+          if (!months || Number(months) <= 0) {
+            Swal.fire('Validação', 'Informe o número de meses.', 'warning');
+            return;
+          }
+          periods = Number(months);
+        } else {
+          const days = daysInput.value.trim();
+          if (!days || Number(days) <= 0) {
+            Swal.fire('Validação', 'Informe o número de dias.', 'warning');
+            return;
+          }
+          periods = Number(days);
+        }
+
+        const ratePercent = Number(selectedOption.dataset.rate || 0);
+        const periodType = selectedOption.dataset.periodType || '';
+        const method = selectedOption.dataset.method || 'flat';
+        const principal = Number(principalRaw);
+        let paymentPerCycle = Number(paymentRaw);
+
+        if (!ratePercent || ratePercent < 0) {
+          Swal.fire('Validação', 'A taxa de juro configurada para este tipo é inválida.', 'warning');
+          return;
+        }
+        if (principal <= 0) {
+          Swal.fire('Validação', 'Valor do empréstimo deve ser maior que zero.', 'warning');
+          return;
+        }
+        if (paymentPerCycle <= 0) {
+          Swal.fire('Validação', 'Pagamento por ciclo deve ser maior que zero.', 'warning');
+          return;
+        }
+
+        // Aviso se modo != period_type
+        if (mode === 'monthly' && periodType === 'daily') {
+          Swal.fire('Aviso', 'Está a usar modo Mensal com tipo de juro Diário. Verifique se é isso que pretende.', 'info');
+        }
+        if (mode === 'daily' && periodType === 'monthly') {
+          Swal.fire('Aviso', 'Está a usar modo Diário com tipo de juro Mensal. Verifique se é isso que pretende.', 'info');
+        }
+
+        if (method !== 'flat') {
+          Swal.fire('Info', 'Neste momento apenas o método "Taxa fixa sobre saldo" (flat) está implementado.', 'info');
+        }
+
+        const r = ratePercent / 100.0;
+
+        let saldo = principal;
+        let totalInterest = 0;
+        let totalPaid = 0;
+
+        scheduleTable.clear();
+
+        for (let i = 1; i <= periods; i++) {
+          if (saldo <= 0) {
+            // já liquidou antes do fim dos períodos
+            break;
+          }
+
+          const saldoInicial = saldo;
+          const jurosCiclo = saldoInicial * r;
+          let pagamento = paymentPerCycle;
+          let amortizacao = 0;
+          let obs = '';
+
+          const isLast = (i === periods);
+
+          if (isLast) {
+            // Na última parcela, ajustamos o pagamento para liquidar tudo:
+            // pagamento = juros do ciclo + saldo
+            pagamento = jurosCiclo + saldoInicial;
+            amortizacao = saldoInicial;
+            saldo = 0;
+            obs = 'Parcela ajustada para liquidar o empréstimo.';
+          } else {
+            // Ciclos anteriores: usa pagamento indicado (que pode ter sido sugerido ou editado)
+            if (pagamento <= jurosCiclo) {
+              // Paga só juros ou nem isso: saldo não reduz, mas será corrigido na última
+              amortizacao = 0;
+              saldo = saldoInicial;  // não reduz aqui
+              obs = 'Pagamento abaixo ou igual aos juros; saldo será corrigido na última parcela.';
+            } else {
+              amortizacao = pagamento - jurosCiclo;
+              saldo = saldoInicial - amortizacao;
+              if (saldo < 0) {
+                amortizacao += saldo;  // ajustar caso passe um pouco
+                saldo = 0;
+              }
+              obs = 'Reduziu principal.';
+            }
+          }
+
+          totalInterest += jurosCiclo;
+          totalPaid += pagamento;
+
+          scheduleTable.row.add([
+            i,
+            mode === 'monthly' ? `Mês ${i}` : `Dia ${i}`,
+            formatMoney(saldoInicial),
+            formatMoney(jurosCiclo),
+            formatMoney(pagamento),
+            formatMoney(amortizacao),
+            formatMoney(saldo),
+            obs
+          ]);
+        }
+
+        scheduleTable.draw();
+
+        // Resumo
+        document.getElementById('sumPrincipal').innerText = formatMoney(principal);
+        document.getElementById('sumInterest').innerText = formatMoney(totalInterest);
+        document.getElementById('sumTotalPaid').innerText = formatMoney(totalPaid);
+        document.getElementById('sumRemaining').innerText = formatMoney(saldo);
+        document.getElementById('calcSummary').style.display = 'block';
+      });
+
+      // Tentar sugerir automaticamente no load (caso campos já venham pré-preenchidos)
+      autoSuggestPayment();
+    });
+  </script>
+{% endblock extra_js %}

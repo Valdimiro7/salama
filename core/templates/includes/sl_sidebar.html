@@ -178,17 +178,18 @@
                 </a>
                 <div class="collapse" id="menu-juros">
                     <ul class="nav ms-4">
+                        
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> TJ </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Tipos de Juros </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:interest_calculator' %}">
+                            <span class="sidenav-mini-icon"> CJ </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Cálculo de Juros </span>
+                        </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> CJ </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Cálculo de Juros </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:interest_type_list' %}">
+                            <span class="sidenav-mini-icon"> TJ </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Tipos de Juros </span>
+                        </a>
                         </li>
                     </ul>
                 </div>

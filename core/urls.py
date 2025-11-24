@@ -8,6 +8,7 @@ from core.views.expense.expense_view import expense_category_list, create_expens
 from core.views.expense.expense_view import expense_list, create_expense, download_expense_attachment
 from core.views.income.income_view import income_category_list, create_income_category, income_list, create_income, download_income_attachment
 from core.views.transaction.transaction_view import transaction_list
+from core.views.interest.interest_view import interest_type_list, create_interest_type, interest_calculator
 
 app_name = "core"
 
@@ -53,6 +54,11 @@ urlpatterns = [
     
     # Transações
     path("transactions/", transaction_list, name="transaction_list"),
-
+    
+    
+    # Juros
+    path("interest/types/", interest_type_list, name="interest_type_list"),
+    path("interest/types/create/", create_interest_type, name="create_interest_type"),
+    path("interest/calculator/", interest_calculator, name="interest_calculator"),
 
 ]
