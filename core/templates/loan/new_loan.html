@@ -1,0 +1,802 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-10 mx-auto"><!-- margem lateral -->
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
+            <h6 class="text-white text-capitalize ps-3">Novo Empréstimo</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+
+            <!-- STEP INDICATOR -->
+            <div class="loan-steps mb-4">
+              <div class="loan-step-indicator active" data-step="1">
+                <div class="circle">1</div>
+                <span>Detalhes</span>
+              </div>
+              <div class="loan-step-indicator" data-step="2">
+                <div class="circle">2</div>
+                <span>Garantias</span>
+              </div>
+              <div class="loan-step-indicator" data-step="3">
+                <div class="circle">3</div>
+                <span>Avalista</span>
+              </div>
+              <div class="loan-step-indicator" data-step="4">
+                <div class="circle">4</div>
+                <span>Plano de Pagamento</span>
+              </div>
+              <div class="loan-step-indicator" data-step="5">
+                <div class="circle">5</div>
+                <span>Pagamentos</span>
+              </div>
+            </div>
+
+            <form id="newLoanForm" method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+
+              <div class="row g-4">
+                <!-- COLUNA PRINCIPAL COM OS STEPS -->
+                <div class="col-lg-7">
+
+                  <!-- STEP 1: DETALHES -->
+                  <div class="loan-step-panel" data-step-panel="1">
+                    <h6 class="mb-3">Passo 1 · Detalhes do Empréstimo</h6>
+
+                    <div class="mb-3">
+                      <label class="form-label">Membro / Cliente *</label>
+                      <div class="input-group input-group-outline">
+                        <select class="form-select" name="member" id="id_member">
+                          <option value="">— Seleccione —</option>
+                          {% for m in members %}
+                            <option value="{{ m.id }}"
+                              {% if form_data.member|default:'' == m.id|stringformat:'s' %}selected{% endif %}>
+                              {{ m.first_name }} {{ m.last_name }} — {{ m.phone }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      {% if errors.member %}
+                        <small class="text-danger">{{ errors.member }}</small>
+                      {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Tipo de Empréstimo</label>
+                      <div class="input-group input-group-outline">
+                        <select class="form-select" name="loan_type" id="id_loan_type">
+                          <option value="">— Seleccione —</option>
+                          {% for lt in loan_types %}
+                            <option value="{{ lt.id }}"
+                              {% if form_data.loan_type|default:'' == lt.id|stringformat:'s' %}selected{% endif %}>
+                              {{ lt.name }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      {% if errors.loan_type %}
+                        <small class="text-danger">{{ errors.loan_type }}</small>
+                      {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Tipo de Juro *</label>
+                      <div class="input-group input-group-outline">
+                        <select class="form-select" name="interest_type" id="id_interest_type">
+                          <option value="">— Seleccione —</option>
+                          {% for it in interest_types %}
+                            <option value="{{ it.id }}"
+                                    data-rate="{{ it.rate }}"
+                                    data-period-type="{{ it.period_type }}"
+                                    {% if form_data.interest_type|default:'' == it.id|stringformat:'s' %}selected{% endif %}>
+                              {{ it.name }} ({{ it.rate|floatformat:2 }}% / {{ it.get_period_type_display }})
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      {% if errors.interest_type %}
+                        <small class="text-danger">{{ errors.interest_type }}</small>
+                      {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Valor do Empréstimo (MT) *</label>
+                      <div class="input-group input-group-outline">
+                        <input type="number" step="0.01" class="form-control"
+                               name="principal_amount" id="id_principal_amount"
+                               value="{{ form_data.principal_amount|default:'' }}"
+                               placeholder="Ex: 10 000">
+                      </div>
+                      {% if errors.principal_amount %}
+                        <small class="text-danger">{{ errors.principal_amount }}</small>
+                      {% endif %}
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Tipo de Período *</label>
+                        <div class="input-group input-group-outline">
+                          <select class="form-select" name="period_type" id="id_period_type">
+                            <option value="monthly"
+                              {% if form_data.period_type|default:'monthly' == 'monthly' %}selected{% endif %}>
+                              Mensal
+                            </option>
+                            <option value="daily"
+                              {% if form_data.period_type|default:'' == 'daily' %}selected{% endif %}>
+                              Diário
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Nº de Períodos *</label>
+                        <div class="input-group input-group-outline">
+                          <input type="number" min="1" class="form-control"
+                                 name="term_periods" id="id_term_periods"
+                                 value="{{ form_data.term_periods|default:'' }}"
+                                 placeholder="Ex: 12">
+                        </div>
+                        {% if errors.term_periods %}
+                          <small class="text-danger">{{ errors.term_periods }}</small>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Pagamento por ciclo (MT) *</label>
+                      <div class="input-group input-group-outline">
+                        <input type="number" step="0.01" class="form-control"
+                               name="payment_per_period" id="id_payment_per_period"
+                               value="{{ form_data.payment_per_period|default:'' }}"
+                               placeholder="Será calculado automaticamente, mas pode ser ajustado.">
+                      </div>
+                      <small class="text-muted">
+                        O sistema sugere um valor que liquida o empréstimo no prazo definido.  
+                        Pode ajustar manualmente se necessário.
+                      </small>
+                      {% if errors.payment_per_period %}
+                        <small class="text-danger d-block">{{ errors.payment_per_period }}</small>
+                      {% endif %}
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Data de Libertação</label>
+                        <div class="input-group input-group-outline">
+                          <input type="date" class="form-control" name="release_date" id="id_release_date"
+                                 value="{{ form_data.release_date|default:'' }}">
+                        </div>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Primeira Data de Pagamento</label>
+                        <div class="input-group input-group-outline">
+                          <input type="date" class="form-control" name="first_payment_date" id="id_first_payment_date"
+                                 value="{{ form_data.first_payment_date|default:'' }}">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Método de Desembolso *</label>
+                      <div class="input-group input-group-outline">
+                        <select class="form-select" name="disburse_method" id="id_disburse_method">
+                          <option value="cash"
+                            {% if form_data.disburse_method|default:'cash' == 'cash' %}selected{% endif %}>
+                            Cash
+                          </option>
+                          <option value="company_account"
+                            {% if form_data.disburse_method|default:'' == 'company_account' %}selected{% endif %}>
+                            Transferência - Conta da Empresa
+                          </option>
+                          <option value="mobile_wallet"
+                            {% if form_data.disburse_method|default:'' == 'mobile_wallet' %}selected{% endif %}>
+                            Carteira Móvel (M-Pesa, e-Mola, etc.)
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="mb-3" id="company-account-wrapper" style="display:none;">
+                      <label class="form-label">Conta da Empresa para Desembolso *</label>
+                      <div class="input-group input-group-outline">
+                        <select class="form-select" name="company_account" id="id_company_account">
+                          <option value="">— Seleccione —</option>
+                          {% for ca in company_accounts %}
+                            <option value="{{ ca.id }}"
+                            {% if form_data.company_account|default:'' == ca.id|stringformat:'s' %}selected{% endif %}>
+                              {{ ca.name }} ({{ ca.account_type.get_category_display }}) — {{ ca.account_identifier }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      {% if errors.company_account %}
+                        <small class="text-danger">{{ errors.company_account }}</small>
+                      {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Finalidade do Empréstimo</label>
+                      <div class="input-group input-group-outline">
+                        <input type="text" class="form-control" name="purpose" id="id_purpose"
+                               value="{{ form_data.purpose|default:'' }}" placeholder="Ex: Capital para pequeno negócio">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Anexo (opcional)</label>
+                      <div class="input-group input-group-outline">
+                        <input type="file" class="form-control" name="attachment" id="id_attachment">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Observações</label>
+                      <div class="input-group input-group-outline">
+                        <textarea class="form-control" rows="3" name="remarks" id="id_remarks"
+                                  placeholder="Notas internas, condições especiais, etc.">{{ form_data.remarks|default:'' }}</textarea>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- STEP 2: GARANTIAS (COLATERAL) -->
+                  <div class="loan-step-panel d-none" data-step-panel="2">
+                    <h6 class="mb-3">Passo 2 · Garantias (Colateral)</h6>
+                    <p class="text-sm text-muted">
+                      Opcional. Use para registar bens usados como garantia do empréstimo.
+                    </p>
+
+                    <div class="mb-3">
+                      <label class="form-label">Nome do Bem</label>
+                      <div class="input-group input-group-outline">
+                        <input type="text" class="form-control" name="guarantee_name"
+                               value="{{ form_data.guarantee_name|default:'' }}"
+                               placeholder="Ex: Motorizada, Laptop, TV, etc.">
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Tipo de Garantia</label>
+                        <div class="input-group input-group-outline">
+                          <input type="text" class="form-control" name="guarantee_type"
+                                 value="{{ form_data.guarantee_type|default:'' }}"
+                                 placeholder="Ex: Veículo, Equipamento, Imóvel">
+                        </div>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Nº de Série / Identificação</label>
+                        <div class="input-group input-group-outline">
+                          <input type="text" class="form-control" name="guarantee_serial"
+                                 value="{{ form_data.guarantee_serial|default:'' }}">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Valor Estimado (MT)</label>
+                      <div class="input-group input-group-outline">
+                        <input type="number" step="0.01" class="form-control"
+                               name="guarantee_estimated_price"
+                               value="{{ form_data.guarantee_estimated_price|default:'' }}">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Anexo (foto / documento)</label>
+                      <div class="input-group input-group-outline">
+                        <input type="file" class="form-control" name="guarantee_attachment" id="id_guarantee_attachment">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Descrição</label>
+                      <div class="input-group input-group-outline">
+                        <textarea class="form-control" rows="3"
+                                  name="guarantee_description">{{ form_data.guarantee_description|default:'' }}</textarea>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- STEP 3: AVALISTA (MEMBRO) -->
+                  <div class="loan-step-panel d-none" data-step-panel="3">
+                    <h6 class="mb-3">Passo 3 · Avalista</h6>
+                    <p class="text-sm text-muted">
+                      Opcional. O avalista deve existir como membro na base de dados.
+                    </p>
+
+                    <div class="mb-3">
+                      <label class="form-label">Avalista (Membro)</label>
+                      <div class="input-group input-group-outline">
+                        <select class="form-select" name="guarantor_member" id="id_guarantor_member">
+                          <option value="">— Seleccione —</option>
+                          {% for m in members %}
+                            <option value="{{ m.id }}"
+                              {% if form_data.guarantor_member|default:'' == m.id|stringformat:'s' %}selected{% endif %}>
+                              {{ m.first_name }} {{ m.last_name }} — {{ m.phone }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Conta / Identificador do Avalista</label>
+                      <div class="input-group input-group-outline">
+                        <input type="text" class="form-control" name="guarantor_account"
+                               value="{{ form_data.guarantor_account|default:'' }}">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Montante Coberto (MT)</label>
+                      <div class="input-group input-group-outline">
+                        <input type="number" step="0.01" class="form-control" name="guarantor_amount"
+                               value="{{ form_data.guarantor_amount|default:'' }}">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- STEP 4: PLANO DE PAGAMENTO -->
+                  <div class="loan-step-panel d-none" data-step-panel="4">
+                    <h6 class="mb-3">Passo 4 · Plano de Pagamento (Simulação)</h6>
+                    <p class="text-sm text-muted">
+                      Simulação baseada no valor, taxa de juro e pagamento por ciclo.
+                      A última prestação ajusta para que o saldo final seja 0.
+                    </p>
+
+                    <div class="table-responsive">
+                      <table class="table table-bordered table-striped align-items-center mb-0" id="schedule-table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Período</th>
+                            <th>Saldo Inicial</th>
+                            <th>Juros</th>
+                            <th>Pagamento</th>
+                            <th>Amortização</th>
+                            <th>Saldo Final</th>
+                          </tr>
+                        </thead>
+                        <tbody id="schedule-body">
+                          <!-- preenchido por JS -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- STEP 5: PAGAMENTOS -->
+                  <div class="loan-step-panel d-none" data-step-panel="5">
+                    <h6 class="mb-3">Passo 5 · Pagamentos</h6>
+                    <p class="text-sm text-muted">
+                      Resumo do plano estimado. Depois de criar o empréstimo, os pagamentos reais serão registados noutra secção.
+                    </p>
+
+                    <ul class="list-group mb-3">
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Valor do Empréstimo</span>
+                        <strong id="sumPrincipalStep5">MT 0,00</strong>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Pagamento por Ciclo</span>
+                        <strong id="sumPaymentStep5">MT 0,00</strong>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Nº de Períodos</span>
+                        <strong id="sumPeriodsStep5">0</strong>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between">
+                        <span>Total Estimado Pago</span>
+                        <strong id="sumTotalPaidStep5">MT 0,00</strong>
+                      </li>
+                    </ul>
+
+                    <p class="text-sm">
+                      Clique em <strong>Guardar Empréstimo</strong> para finalizar.  
+                      O plano de pagamento e o registo de pagamentos serão geridos noutra área da aplicação.
+                    </p>
+                  </div>
+
+                  <!-- NAVEGAÇÃO DO WIZARD -->
+                  <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnPrevStep">
+                      <i class="material-symbols-rounded me-1">chevron_left</i> Anterior
+                    </button>
+                    <button type="button" class="btn bg-gradient-dark btn-sm" id="btnNextStep">
+                      Próximo <i class="material-symbols-rounded ms-1">chevron_right</i>
+                    </button>
+                    <button type="submit" class="btn bg-gradient-success btn-sm d-none" id="btnSubmitWizard">
+                      <i class="material-symbols-rounded me-1">check_circle</i> Guardar Empréstimo
+                    </button>
+                  </div>
+
+                </div>
+
+                <!-- COLUNA RESUMO -->
+                <div class="col-lg-5">
+                  <div class="card border">
+                    <div class="card-header pb-0">
+                      <h6 class="mb-0">Resumo do Empréstimo</h6>
+                      <p class="text-sm text-muted mb-0">
+                        Pré-visualização baseada nos dados do Passo 1.
+                      </p>
+                    </div>
+                    <div class="card-body pt-3">
+                      <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between">
+                          <span>Valor do Empréstimo</span>
+                          <strong id="sumPrincipal">MT 0,00</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                          <span>Taxa (%) por período</span>
+                          <strong id="sumRate">0,00%</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                          <span>Nº de Períodos</span>
+                          <strong id="sumPeriods">0</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                          <span>Pagamento por Ciclo</span>
+                          <strong id="sumPayment">MT 0,00</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                          <span>Total Estimado Pago</span>
+                          <strong id="sumTotalPaid">MT 0,00</strong>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </div> <!-- /row -->
+            </form>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  function formatMoney(value) {
+    const n = Number(value || 0);
+    return 'MT ' + n.toLocaleString('pt-PT', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function sugerirPagamento(principal, r, n) {
+    if (!n || n <= 0) return 0;
+    if (!r || r === 0) {
+      return principal / n;
+    }
+    const pow = Math.pow(1 + r, n);
+    return principal * (r * pow) / (pow - 1);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    let currentStep = 1;
+    const totalSteps = 5;
+
+    const stepIndicators = document.querySelectorAll('.loan-step-indicator');
+    const stepPanels = document.querySelectorAll('.loan-step-panel');
+    const btnPrev = document.getElementById('btnPrevStep');
+    const btnNext = document.getElementById('btnNextStep');
+    const btnSubmit = document.getElementById('btnSubmitWizard');
+
+    const interestSelect = document.getElementById('id_interest_type');
+    const principalInput = document.getElementById('id_principal_amount');
+    const termInput = document.getElementById('id_term_periods');
+    const paymentInput = document.getElementById('id_payment_per_period');
+    const disburseMethodSelect = document.getElementById('id_disburse_method');
+    const companyAccountWrapper = document.getElementById('company-account-wrapper');
+
+    const sumPrincipal = document.getElementById('sumPrincipal');
+    const sumRate = document.getElementById('sumRate');
+    const sumPeriods = document.getElementById('sumPeriods');
+    const sumPayment = document.getElementById('sumPayment');
+    const sumTotalPaid = document.getElementById('sumTotalPaid');
+
+    const sumPrincipal5 = document.getElementById('sumPrincipalStep5');
+    const sumPayment5 = document.getElementById('sumPaymentStep5');
+    const sumPeriods5 = document.getElementById('sumPeriodsStep5');
+    const sumTotalPaid5 = document.getElementById('sumTotalPaidStep5');
+
+    const scheduleBody = document.getElementById('schedule-body');
+
+    function toggleCompanyAccount() {
+      const method = disburseMethodSelect.value;
+      if (method === 'company_account' || method === 'mobile_wallet') {
+        companyAccountWrapper.style.display = 'block';
+      } else {
+        companyAccountWrapper.style.display = 'none';
+      }
+    }
+    disburseMethodSelect.addEventListener('change', toggleCompanyAccount);
+    toggleCompanyAccount();
+
+    function goToStep(step) {
+      if (step < 1 || step > totalSteps) return;
+
+      currentStep = step;
+
+      stepPanels.forEach(p => {
+        p.classList.toggle('d-none', Number(p.getAttribute('data-step-panel')) !== step);
+      });
+
+      stepIndicators.forEach(ind => {
+        const s = Number(ind.getAttribute('data-step'));
+        ind.classList.toggle('active', s === step);
+        ind.classList.toggle('completed', s < step);
+      });
+
+      btnPrev.disabled = (step === 1);
+      if (step === totalSteps) {
+        btnNext.classList.add('d-none');
+        btnSubmit.classList.remove('d-none');
+      } else {
+        btnNext.classList.remove('d-none');
+        btnSubmit.classList.add('d-none');
+      }
+
+      if (step === 4) {
+        generateSchedule();
+      }
+      if (step === 5) {
+        updateSummaryStep5();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateCurrentStep() {
+      // Só validamos o Passo 1 (Detalhes). Garantias e Avalista são opcionais.
+      if (currentStep === 1) {
+        if (!document.getElementById('id_member').value) {
+          Swal.fire('Validação', 'Selecione o membro/cliente.', 'warning');
+          return false;
+        }
+        if (!interestSelect.value) {
+          Swal.fire('Validação', 'Selecione o tipo de juro.', 'warning');
+          return false;
+        }
+        if (!principalInput.value || Number(principalInput.value) <= 0) {
+          Swal.fire('Validação', 'Informe o valor do empréstimo.', 'warning');
+          return false;
+        }
+        if (!termInput.value || Number(termInput.value) <= 0) {
+          Swal.fire('Validação', 'Informe o número de períodos.', 'warning');
+          return false;
+        }
+        if (!paymentInput.value || Number(paymentInput.value) <= 0) {
+          Swal.fire('Validação', 'Pagamento por ciclo inválido. Pode usar o valor sugerido.', 'warning');
+          return false;
+        }
+
+        const method = disburseMethodSelect.value;
+        if ((method === 'company_account' || method === 'mobile_wallet')
+            && !document.getElementById('id_company_account').value) {
+          Swal.fire('Validação', 'Selecione a conta da empresa para o desembolso.', 'warning');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    btnPrev.addEventListener('click', function () {
+      if (currentStep > 1) goToStep(currentStep - 1);
+    });
+
+    btnNext.addEventListener('click', function () {
+      if (!validateCurrentStep()) return;
+      if (currentStep < totalSteps) goToStep(currentStep + 1);
+    });
+
+    function autoSuggestPaymentAndSummary() {
+      const principal = Number(principalInput.value || 0);
+      const term = Number(termInput.value || 0);
+
+      const opt = interestSelect.options[interestSelect.selectedIndex];
+      const ratePercent = opt && opt.value ? Number(opt.dataset.rate || 0) : 0;
+      const r = ratePercent / 100.0;
+
+      if (principal > 0 && term > 0 && ratePercent >= 0) {
+        if (!paymentInput.value || Number(paymentInput.value) <= 0) {
+          const suggested = sugerirPagamento(principal, r, term);
+          if (suggested > 0 && !isNaN(suggested)) {
+            paymentInput.value = suggested.toFixed(2);
+          }
+        }
+
+        const payment = Number(paymentInput.value || 0);
+        const totalPaid = payment * term;
+
+        sumPrincipal.innerText = formatMoney(principal);
+        sumRate.innerText = ratePercent.toFixed(2) + '%';
+        sumPeriods.innerText = term.toString();
+        sumPayment.innerText = formatMoney(payment);
+        sumTotalPaid.innerText = formatMoney(totalPaid);
+      } else {
+        sumPrincipal.innerText = formatMoney(0);
+        sumRate.innerText = '0,00%';
+        sumPeriods.innerText = '0';
+        sumPayment.innerText = formatMoney(0);
+        sumTotalPaid.innerText = formatMoney(0);
+      }
+    }
+
+    [interestSelect, principalInput, termInput, paymentInput].forEach(el => {
+      el.addEventListener('change', autoSuggestPaymentAndSummary);
+      el.addEventListener('blur', autoSuggestPaymentAndSummary);
+      el.addEventListener('keyup', autoSuggestPaymentAndSummary);
+    });
+
+    autoSuggestPaymentAndSummary();
+    goToStep(1);
+
+    function generateSchedule() {
+      scheduleBody.innerHTML = '';
+
+      const principal = Number(principalInput.value || 0);
+      const term = Number(termInput.value || 0);
+      const opt = interestSelect.options[interestSelect.selectedIndex];
+      const ratePercent = opt && opt.value ? Number(opt.dataset.rate || 0) : 0;
+      const r = ratePercent / 100.0;
+      let payment = Number(paymentInput.value || 0);
+
+      if (!principal || !term || !payment) return;
+
+      let saldo = principal;
+
+      for (let i = 1; i <= term; i++) {
+        if (saldo <= 0) break;
+
+        const saldoInicial = saldo;
+        const juros = saldoInicial * r;
+        let amort = 0;
+        let pag = payment;
+
+        if (i === term) {
+          pag = juros + saldoInicial;
+          amort = saldoInicial;
+          saldo = 0;
+        } else {
+          if (pag <= juros) {
+            amort = 0;
+            saldo = saldoInicial;
+          } else {
+            amort = pag - juros;
+            saldo = saldoInicial - amort;
+            if (saldo < 0) {
+              amort += saldo;
+              saldo = 0;
+            }
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i}</td>
+          <td>${i}</td>
+          <td>${formatMoney(saldoInicial)}</td>
+          <td>${formatMoney(juros)}</td>
+          <td>${formatMoney(pag)}</td>
+          <td>${formatMoney(amort)}</td>
+          <td>${formatMoney(saldo)}</td>
+        `;
+        scheduleBody.appendChild(tr);
+      }
+    }
+
+    function updateSummaryStep5() {
+      const principal = Number(principalInput.value || 0);
+      const term = Number(termInput.value || 0);
+      const payment = Number(paymentInput.value || 0);
+      const totalPaid = payment * term;
+
+      sumPrincipal5.innerText = formatMoney(principal);
+      sumPayment5.innerText = formatMoney(payment);
+      sumPeriods5.innerText = term.toString();
+      sumTotalPaid5.innerText = formatMoney(totalPaid);
+    }
+
+    {% if loan_created %}
+    Swal.fire({
+      icon: 'success',
+      title: 'Empréstimo criado',
+      text: 'O empréstimo #{{ new_loan_id }} foi registado com sucesso.',
+      confirmButtonText: 'OK'
+    });
+    {% endif %}
+  });
+</script>
+
+<style>
+.loan-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.loan-step-indicator {
+  flex: 1;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+}
+.loan-step-indicator .circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 0 auto 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  border: 2px solid #cbd5e1;
+  color: #64748b;
+  background-color: #ffffff;
+}
+.loan-step-indicator span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.loan-step-indicator::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e8f0;
+  z-index: -1;
+}
+.loan-step-indicator:last-child::after {
+  display: none;
+}
+.loan-step-indicator.active .circle {
+  border-color: #082939;
+  background-color: #082939;
+  color: #fff;
+}
+.loan-step-indicator.completed .circle {
+  border-color: #16a34a;
+  background-color: #16a34a;
+  color: #fff;
+}
+.loan-step-indicator.active span {
+  color: #082939;
+  font-weight: 600;
+}
+.loan-step-indicator.completed span {
+  color: #16a34a;
+  font-weight: 600;
+}
+@media (max-width: 768px) {
+  .loan-step-indicator span {
+    display: none;
+  }
+  .loan-step-indicator::after {
+    top: 18px;
+  }
+}
+</style>
+{% endblock extra_js %}

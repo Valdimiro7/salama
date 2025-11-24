@@ -9,6 +9,10 @@ from .incomecategory import IncomeCategory
 from .income import Income
 from .transaction import Transaction
 from .interesttype import InterestType
+from .loan import Loan
+from .loantype import LoanType
+from .loanguarantor import LoanGuarantor
+from .loanguarantee import LoanGuarantee
 
 __all__ = [
     'Member',
@@ -21,4 +25,8 @@ __all__ = [
     'Income',
     'Transaction',
     'InterestType',
+    'Loan',
+    'LoanType',
+    'LoanGuarantor',
+    'LoanGuarantee',
 ]

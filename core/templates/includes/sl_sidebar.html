@@ -24,12 +24,6 @@
                 </a>
             </li>
 
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-6">
-                    Gestão da Carteira
-                </h6>
-            </li>
-
             <!-- CLIENTES -->
             <li class="nav-item">
                 <a class="nav-link text-dark" data-bs-toggle="collapse" href="#menu-clientes" role="button"
@@ -66,7 +60,7 @@
                 <div class="collapse" id="menu-emprestimos">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
+                            <a class="nav-link text-dark" href="{% url 'core:new_loan' %}">
                                 <span class="sidenav-mini-icon"> NE </span>
                                 <span class="sidenav-normal ms-2 ps-1"> Novo Empréstimo </span>
                             </a>
@@ -90,15 +84,9 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> CE </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Calculadora de Empréstimos </span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
+                            <a class="nav-link text-dark" href="{% url 'core:loan_type_list' %}">
                                 <span class="sidenav-mini-icon"> TE </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Tipos de Empréstimo </span>
+                                <span class="sidenav-normal ms-2 ps-1"> Tipos de Empréstimos </span>
                             </a>
                         </li>
                     </ul>
@@ -162,12 +150,7 @@
                 </div>
             </li>
 
-            <!-- ====== PARÂMETROS & CONFIGURAÇÃO ====== -->
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-6">
-                    Parâmetros & Configuração
-                </h6>
-            </li>
+         
 
             <!-- JUROS -->
             <li class="nav-item">
@@ -279,13 +262,6 @@
                         </li>
                     </ul>
                 </div>
-            </li>
-
-            <!-- ====== RELATÓRIOS & ADMIN ====== -->
-            <li class="nav-item mt-3">
-                <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-6">
-                    Relatórios & Administração
-                </h6>
             </li>
 
             <!-- RELATÓRIOS -->
