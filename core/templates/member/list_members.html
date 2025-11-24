@@ -1,0 +1,397 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
+            <h6 class="text-white text-capitalize ps-3">Lista de Membros</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Membros registados</h6>
+                <p class="text-sm text-muted mb-0">
+                  Gestão de clientes da carteira de microcrédito.
+                </p>
+              </div>
+              <a href="{% url 'core:add_member' %}" class="btn bg-gradient-dark btn-sm">
+                <i class="material-symbols-rounded me-1">person_add</i>
+                Adicionar Membro
+              </a>
+            </div>
+
+            <div class="table-responsive">
+              <table id="members-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Cidade</th>
+                    <th>Gestor</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for m in members %}
+                  <tr>
+                    <td>{{ m.id }}</td>
+                    <td>
+                      <strong>{{ m.first_name }} {{ m.last_name }}</strong>
+                      {% if m.legal_name %}
+                        <br><small class="text-muted">{{ m.legal_name }}</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if m.is_company %}
+                        <span class="badge bg-info text-white">Empresa</span>
+                      {% else %}
+                        <span class="badge bg-secondary text-white">Pessoa</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ m.phone }}</td>
+                    <td>{{ m.email|default:"—" }}</td>
+                    <td>{{ m.city|default:"—" }}</td>
+                    <td>{{ m.manager.get_full_name|default:m.manager.username }}</td>
+                    <td>
+                      <div class="d-flex gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-primary btn-edit-member"
+                          data-id="{{ m.id }}"
+                          data-first-name="{{ m.first_name }}"
+                          data-last-name="{{ m.last_name }}"
+                          data-legal-name="{{ m.legal_name }}"
+                          data-is-company="{% if m.is_company %}1{% else %}0{% endif %}"
+                          data-phone="{{ m.phone }}"
+                          data-alt-phone="{{ m.alt_phone }}"
+                          data-email="{{ m.email }}"
+                          data-city="{{ m.city }}"
+                          data-address="{{ m.address }}"
+                          data-profession="{{ m.profession }}"
+                          data-marital-status="{{ m.marital_status }}"
+                          data-gender="{{ m.gender }}"
+                          data-manager="{{ m.manager.id }}"
+                        >
+                          <i class="material-symbols-rounded" style="font-size:18px;">edit</i>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-danger btn-delete-member"
+                          data-id="{{ m.id }}"
+                          data-name="{{ m.first_name }} {{ m.last_name }}"
+                        >
+                          <i class="material-symbols-rounded" style="font-size:18px;">delete</i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+</div>
+
+<!-- MODAL EDITAR MEMBRO -->
+<div class="modal fade" id="editMemberModal" tabindex="-1" aria-labelledby="editMemberModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="editMemberForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editMemberModalLabel">Editar Membro</h5>
+          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <input type="hidden" id="edit_member_id" name="member_id">
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Nome *</label>
+                <input type="text" class="form-control" name="first_name" id="edit_first_name">
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Apelido *</label>
+                <input type="text" class="form-control" name="last_name" id="edit_last_name">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="edit_is_company" name="is_company">
+            <label class="form-check-label" for="edit_is_company">É uma empresa?</label>
+          </div>
+
+          <div class="mb-3">
+            <div class="input-group input-group-outline">
+              <label class="form-label">Nome Legal</label>
+              <input type="text" class="form-control" name="legal_name" id="edit_legal_name">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Telefone *</label>
+                <input type="text" class="form-control" name="phone" id="edit_phone">
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Telefone alternativo</label>
+                <input type="text" class="form-control" name="alt_phone" id="edit_alt_phone">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" id="edit_email">
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Cidade</label>
+                <input type="text" class="form-control" name="city" id="edit_city">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="input-group input-group-outline">
+              <label class="form-label">Endereço</label>
+              <textarea class="form-control" name="address" id="edit_address"></textarea>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Profissão</label>
+                <input type="text" class="form-control" name="profession" id="edit_profession">
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Estado civil</label>
+                <select class="form-select" name="marital_status" id="edit_marital_status">
+                  <option value="">— Seleccione —</option>
+                  <option value="solteiro">Solteiro(a)</option>
+                  <option value="casado">Casado(a)</option>
+                  <option value="divorciado">Divorciado(a)</option>
+                  <option value="viuvo">Viúvo(a)</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Sexo</label>
+                <select class="form-select" name="gender" id="edit_gender">
+                  <option value="">— Seleccione —</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="input-group input-group-outline">
+              <label class="form-label">Gestor responsável *</label>
+              <select class="form-select" name="manager" id="edit_manager">
+                <option value="">— Seleccione —</option>
+                {% for g in gestores %}
+                  <option value="{{ g.id }}">{{ g.get_full_name|default:g.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn bg-gradient-dark">Guardar alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+  {% comment %} <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script> {% endcomment %}
+  {% comment %} <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script> {% endcomment %}
+
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // DataTable com Buttons
+      var table = $('#members-table').DataTable({
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[0, 'desc']],
+        dom: 'Bfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copy',  className: 'btn btn-sm btn-primary' },
+          { extend: 'csv',   text: 'CSV',   className: 'btn btn-sm btn-success' },
+          { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-warning' },
+          { extend: 'pdf',   text: 'PDF',   className: 'btn btn-sm btn-danger' },
+          { extend: 'print', text: 'Print', className: 'btn btn-sm btn-info' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+
+      // SweetAlert após criação (redirect com ?created=1)
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('created') === '1') {
+        Swal.fire({
+          icon: "success",
+          title: "Membro registado!",
+          text: "O membro foi registado com sucesso.",
+          timer: 2500,
+          showConfirmButton: false
+        });
+      }
+
+      // EDITAR - abrir modal com dados
+      $(document).on('click', '.btn-edit-member', function () {
+        const btn = $(this);
+        $('#edit_member_id').val(btn.data('id'));
+        $('#edit_first_name').val(btn.data('first-name'));
+        $('#edit_last_name').val(btn.data('last-name'));
+        $('#edit_legal_name').val(btn.data('legal-name') || '');
+        $('#edit_is_company').prop('checked', btn.data('is-company') == 1);
+        $('#edit_phone').val(btn.data('phone'));
+        $('#edit_alt_phone').val(btn.data('alt-phone') || '');
+        $('#edit_email').val(btn.data('email') || '');
+        $('#edit_city').val(btn.data('city') || '');
+        $('#edit_address').val(btn.data('address') || '');
+        $('#edit_profession').val(btn.data('profession') || '');
+        $('#edit_marital_status').val(btn.data('marital-status') || '');
+        $('#edit_gender').val(btn.data('gender') || '');
+        $('#edit_manager').val(String(btn.data('manager') || ''));
+
+        var modalEl = document.getElementById('editMemberModal');
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      });
+
+      // SUBMIT EDIT (AJAX)
+      $('#editMemberForm').on('submit', function (e) {
+        e.preventDefault();
+        const memberId = $('#edit_member_id').val();
+        const url = "{% url 'core:update_member' 0 %}".replace('/0/', '/' + memberId + '/');
+
+        $.ajax({
+          url: url,
+          type: 'POST',
+          data: $(this).serialize(),
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          success: function (resp) {
+            if (resp.success) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Actualizado',
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => {
+                window.location.reload();
+              });
+            } else {
+              Swal.fire('Erro', resp.message || 'Falha ao actualizar membro.', 'error');
+            }
+          },
+          error: function (xhr) {
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar membro.', 'error');
+          }
+        });
+      });
+
+      // DELETE / DESACTIVAR
+      $(document).on('click', '.btn-delete-member', function () {
+        const btn = $(this);
+        const memberId = btn.data('id');
+        const memberName = btn.data('name');
+
+        Swal.fire({
+          title: 'Desactivar membro?',
+          text: `Tem a certeza que pretende desactivar ${memberName}?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sim, desactivar',
+          cancelButtonText: 'Cancelar'
+        }).then((result) => {
+          if (!result.isConfirmed) return;
+
+          const url = "{% url 'core:deactivate_member' 0 %}".replace('/0/', '/' + memberId + '/');
+
+          $.ajax({
+            url: url,
+            type: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function (resp) {
+              if (resp.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Desactivado',
+                  text: resp.message,
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+                const row = btn.closest('tr');
+                table.row(row).remove().draw();
+              } else {
+                Swal.fire('Erro', resp.message || 'Falha ao desactivar membro.', 'error');
+              }
+            },
+            error: function (xhr) {
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao desactivar membro.', 'error');
+            }
+          });
+        });
+      });
+
+    });
+  </script>
+{% endblock extra_js %}
