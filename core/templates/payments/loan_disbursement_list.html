@@ -1,0 +1,297 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-10 mx-auto">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Desembolso de Empréstimos</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Empréstimos aprovados à espera de desembolso</h6>
+                <p class="text-sm text-muted mb-0">
+                  Confirme a saída de valores da conta da Salama para o cliente. Cada desembolso regista uma transacção de saída.
+                </p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="loans-disbursement-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Membro</th>
+                    <th>Tipo</th>
+                    <th>Valor Empréstimo (MT)</th>
+                    <th>Status</th>
+                    <th>Último Desembolso</th>
+                    <th>Conta</th>
+                    <th>Anexo</th>
+                    <th style="width: 160px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for loan in loans %}
+                    {% with last_disb=loan.disbursements.last %}
+                    <tr data-loan-id="{{ loan.id }}"
+                        data-principal="{{ loan.principal_amount|floatformat:2 }}">
+                      <td>{{ loan.id }}</td>
+                      <td>
+                        {{ loan.member.first_name }} {{ loan.member.last_name }}
+                        <br><small class="text-muted">{{ loan.member.phone }}</small>
+                      </td>
+                      <td>{{ loan.loan_type.name|default:"—" }}</td>
+                      <td>{{ loan.principal_amount|floatformat:2 }}</td>
+                      <td>
+                        {% if loan.disbursements.exists %}
+                          <span class="badge bg-success text-white">Desembolsado</span>
+                        {% else %}
+                          <span class="badge bg-warning text-dark">Aguardando desembolso</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if last_disb %}
+                          {{ last_disb.disburse_date }}<br>
+                          <small class="text-muted">MT {{ last_disb.amount|floatformat:2 }}</small>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if last_disb %}
+                          {{ last_disb.company_account.name }}<br>
+                          <small class="text-muted">{{ last_disb.company_account.account_identifier }}</small>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if last_disb and last_disb.attachment %}
+                          <a href="{{ last_disb.attachment.url }}" target="_blank" class="btn btn-outline-primary btn-xs">
+                            <i class="material-symbols-rounded" style="font-size:16px;">attach_file</i>
+                          </a>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if loan.disbursements.exists %}
+                          <button type="button" class="btn btn-outline-secondary btn-xs" disabled>
+                            Já desembolsado
+                          </button>
+                        {% else %}
+                          <button type="button" class="btn btn-outline-success btn-xs btn-open-disburse-modal">
+                            <i class="material-symbols-rounded" style="font-size:16px;">payments</i>
+                            Desembolsar
+                          </button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endwith %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+
+<!-- MODAL: REGISTAR DESEMBOLSO -->
+<div class="modal fade" id="disburseLoanModal" tabindex="-1" aria-labelledby="disburseLoanModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="disburseLoanForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="loan_id" id="id_disb_loan_id">
+        <div class="modal-header">
+          <h5 class="modal-title" id="disburseLoanModalLabel">Desembolsar Empréstimo</h5>
+          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label class="form-label">Conta da Empresa *</label>
+            <div class="input-group input-group-outline">
+              <select class="form-select" name="company_account" id="id_disb_company_account">
+                <option value="">— Seleccione —</option>
+                {% for ca in company_accounts %}
+                  <option value="{{ ca.id }}">
+                    {{ ca.name }} ({{ ca.account_type.get_category_display }}) - {{ ca.account_identifier }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Data do Desembolso *</label>
+            <div class="input-group input-group-outline">
+              <input type="date" class="form-control" name="disburse_date" id="id_disb_date">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Valor a Desembolsar (MT) *</label>
+            <div class="input-group input-group-outline">
+              <input type="number" step="0.01" class="form-control" name="amount" id="id_disb_amount">
+            </div>
+            <small class="text-muted">
+              Por defeito é o valor total do empréstimo, mas pode ajustar se necessário.
+            </small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Método</label>
+            <div class="input-group input-group-outline">
+              <select class="form-select" name="method" id="id_disb_method">
+                <option value="cash">Cash</option>
+                <option value="bank">Conta bancária</option>
+                <option value="mobile">Carteira móvel</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Comprovativo (opcional)</label>
+            <div class="input-group input-group-outline">
+              <input type="file" class="form-control" name="attachment" id="id_disb_attachment">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Notas (opcional)</label>
+            <div class="input-group input-group-outline">
+              <textarea class="form-control" rows="2" name="notes" id="id_disb_notes"></textarea>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn bg-gradient-dark">Confirmar Desembolso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const table = $('#loans-disbursement-table').DataTable({
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1],[10, 25, 50, "Todos"]],
+        order: [[0, 'desc']],
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copy',  className: 'btn btn-sm btn-primary' },
+          { extend: 'csv',   text: 'CSV',   className: 'btn btn-sm btn-success' },
+          { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-warning' },
+          { extend: 'pdf',   text: 'PDF',   className: 'btn btn-sm btn-danger' },
+          { extend: 'print', text: 'Print', className: 'btn btn-sm btn-info' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+
+      // data default = hoje
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth()+1).padStart(2,'0');
+      const dd = String(today.getDate()).padStart(2,'0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+      $('#id_disb_date').val(todayStr);
+
+      // abrir modal de desembolso
+      $(document).on('click', '.btn-open-disburse-modal', function () {
+        const tr = $(this).closest('tr');
+        const loanId = tr.data('loan-id');
+        const principal = tr.data('principal');
+
+        $('#id_disb_loan_id').val(loanId);
+        $('#id_disb_company_account').val('');
+        $('#id_disb_date').val(todayStr);
+        $('#id_disb_amount').val(principal);
+        $('#id_disb_method').val('cash');
+        $('#id_disb_attachment').val('');
+        $('#id_disb_notes').val('');
+
+        $('#disburseLoanModal').modal('show');
+      });
+
+      // submeter desembolso
+      $('#disburseLoanForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const loanId = $('#id_disb_loan_id').val();
+        const companyAccount = $('#id_disb_company_account').val();
+        const disbDate = $('#id_disb_date').val();
+        const amount = $('#id_disb_amount').val().trim();
+
+        if (!companyAccount || !disbDate || !amount) {
+          Swal.fire('Validação', 'Preencha conta, data e valor do desembolso.', 'warning');
+          return;
+        }
+
+        const formData = new FormData(this);
+
+        $.ajax({
+          url: "{% url 'core:register_disbursement' 0 %}".replace('/0/', '/' + loanId + '/'),
+          type: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          success: function (resp) {
+            if (resp.success) {
+              $('#disburseLoanModal').modal('hide');
+              Swal.fire({
+                icon: "success",
+                title: "Desembolso registado",
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => window.location.reload());
+            } else {
+              Swal.fire("Erro", resp.message || "Falha ao registar desembolso.", "error");
+            }
+          },
+          error: function (xhr) {
+            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao registar desembolso.", "error");
+          }
+        });
+      });
+
+    });
+  </script>
+{% endblock extra_js %}

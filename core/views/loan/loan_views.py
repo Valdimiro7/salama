@@ -247,17 +247,14 @@ def pending_loans_list(request):
 
 #============================================================================================================
 #============================================================================================================
-@require_POST
+require_POST
 def confirm_loan(request, loan_id):
     """
     Confirma um empréstimo pendente:
-    - muda status para 'active'
-    - cria o 1º LoanPaymentRequest (pedido de pagamento) em estado 'pending'
+    - muda status para 'approved'
+    O desembolso será feito noutra secção.
     """
-    try:
-        loan = Loan.objects.select_related("member").get(pk=loan_id)
-    except Loan.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Empréstimo não encontrado."}, status=404)
+    loan = get_object_or_404(Loan, pk=loan_id)
 
     if loan.status != "pending":
         return JsonResponse(
@@ -265,31 +262,11 @@ def confirm_loan(request, loan_id):
             status=400,
         )
 
-    # Escolher data de vencimento: primeira data config. ou hoje
-    due_date = loan.first_payment_date or loan.release_date or timezone.localdate()
-
-    amount_due = loan.payment_per_period or loan.principal_amount
-    if not amount_due:
-        return JsonResponse(
-            {"success": False, "message": "Valor de pagamento por ciclo não definido para este empréstimo."},
-            status=400,
-        )
-
-    # Actualizar status do empréstimo
-    loan.status = "active"
+    loan.status = "approved"
     loan.save(update_fields=["status"])
 
-    # Criar pedido de pagamento
-    LoanPaymentRequest.objects.create(
-        loan=loan,
-        member=loan.member,
-        due_date=due_date,
-        amount_due=amount_due,
-        status="pending",
-    )
-
     return JsonResponse(
-        {"success": True, "message": "Empréstimo confirmado e primeiro pedido de pagamento criado."}
+        {"success": True, "message": "Empréstimo confirmado. Agora pode ser desembolsado na secção Desembolso."}
     )
 
 #============================================================================================================

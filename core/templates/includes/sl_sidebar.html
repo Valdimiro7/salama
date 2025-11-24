@@ -35,17 +35,16 @@
                     <ul class="nav ms-4">
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="{% url 'core:member_list' %}">
-                                <span class="sidenav-mini-icon"> LM </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">list</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Lista de Membros </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="{% url 'core:add_member' %}">
-                                <span class="sidenav-mini-icon"> AM </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">person_add</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Adicionar Membros </span>
                             </a>
                         </li>
-
                     </ul>
                 </div>
             </li>
@@ -61,31 +60,31 @@
                     <ul class="nav ms-4">
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="{% url 'core:new_loan' %}">
-                                <span class="sidenav-mini-icon"> NE </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">add_circle</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Novo Empréstimo </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> AC </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">check_circle</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Empréstimos Activos </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="{% url 'core:pending_loans' %}">
-                                <span class="sidenav-mini-icon"> PD </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">pending</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Empréstimos Pendentes </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> TE </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">view_list</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Todos os Empréstimos </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="{% url 'core:loan_type_list' %}">
-                                <span class="sidenav-mini-icon"> TE </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">category</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Tipos de Empréstimos </span>
                             </a>
                         </li>
@@ -103,20 +102,20 @@
                 <div class="collapse" id="menu-pagamentos">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="{% url 'core:loan_payment_list' %}">
-                                <span class="sidenav-mini-icon"> PE </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Pagamento de Empréstimo </span>
+                            <a class="nav-link text-dark" href="{% url 'core:loan_disbursement_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">upload</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Desembolso</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> RE </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Reembolso de Empréstimo </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">download</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Reembolso</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> PC </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">schedule</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Proximos Pagamentos</span>
                             </a>
                         </li>
@@ -134,29 +133,26 @@
                 <div class="collapse" id="menu-contas">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:client_account_list' %}">
-                            <span class="sidenav-mini-icon"> CC </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Conta dos Clientes </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:client_account_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">account_circle</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Conta dos Clientes </span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:company_account_list' %}">
-                            <span class="sidenav-mini-icon"> CE </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Conta da Empresa </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:company_account_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">business</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Conta da Empresa </span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:account_type_list' %}">
-                            <span class="sidenav-mini-icon"> TC </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Tipos de Contas </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:account_type_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">category</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Tipos de Contas </span>
+                            </a>
                         </li>
-
                     </ul>
                 </div>
             </li>
-
-         
 
             <!-- JUROS -->
             <li class="nav-item">
@@ -167,18 +163,17 @@
                 </a>
                 <div class="collapse" id="menu-juros">
                     <ul class="nav ms-4">
-                        
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:interest_calculator' %}">
-                            <span class="sidenav-mini-icon"> CJ </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Cálculo de Juros </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:interest_calculator' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">calculate</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Cálculo de Juros </span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:interest_type_list' %}">
-                            <span class="sidenav-mini-icon"> TJ </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Tipos de Juros </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:interest_type_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">category</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Tipos de Juros </span>
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -194,12 +189,11 @@
                 <div class="collapse" id="menu-transaccoes">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:transaction_list' %}">
-                            <span class="sidenav-mini-icon"> HT </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Histórico de Transacções </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:transaction_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">history</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Histórico de Transacções </span>
+                            </a>
                         </li>
-
                     </ul>
                 </div>
             </li>
@@ -213,34 +207,30 @@
                 </a>
                 <div class="collapse" id="menu-despesas">
                     <ul class="nav ms-4">
-                        
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="{% url 'core:expense_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">remove_circle</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Despesas </span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:expense_list' %}">
-                            <span class="sidenav-mini-icon"> LD </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Despesas </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:income_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">add_circle</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Rendimentos </span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:income_list' %}">
-                            <span class="sidenav-mini-icon"> LR </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Rendimentos </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:expense_category_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">folder</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Categoria de Despesas </span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:expense_category_list' %}">
-                            <span class="sidenav-mini-icon"> CD </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Categoria de Despesas </span>
-                        </a>
+                            <a class="nav-link text-dark" href="{% url 'core:income_category_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">folder_open</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Categoria de Rendimentos </span>
+                            </a>
                         </li>
-                        <li class="nav-item">
-                        <a class="nav-link text-dark" href="{% url 'core:income_category_list' %}">
-                            <span class="sidenav-mini-icon"> TR </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Categoria de Rendimentos </span>
-                        </a>
-                        </li>
-                        
-
                     </ul>
                 </div>
             </li>
@@ -256,13 +246,13 @@
                     <ul class="nav ms-4">
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> TU </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">people</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Todos os Utilizadores </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> PU </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">admin_panel_settings</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Permissões de Utilizadores </span>
                             </a>
                         </li>
@@ -281,19 +271,19 @@
                     <ul class="nav ms-4">
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> RC </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">pie_chart</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Relatório da Carteira </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> RR </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">warning</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Relatório de Risco </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> RP </span>
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">receipt</i>
                                 <span class="sidenav-normal ms-2 ps-1"> Relatório de Pagamentos </span>
                             </a>
                         </li>
@@ -324,7 +314,7 @@
                                                 {% if model.url %}
                                                     <li class="nav-item">
                                                         <a class="nav-link text-dark" href="{{ model.url }}">
-                                                            <span class="sidenav-mini-icon"> {{ model.label|first }} </span>
+                                                            <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">database</i>
                                                             <span class="sidenav-normal ms-2 ps-1"> {{ model.label }} </span>
                                                         </a>
                                                     </li>
