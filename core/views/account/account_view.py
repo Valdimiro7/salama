@@ -2,6 +2,8 @@ from core.models import Member, AccountType, ClientAccount, CompanyAccount
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import render
+from decimal import Decimal
+
 
 
 #============================================================================================================
@@ -183,11 +185,56 @@ def create_company_account(request):
 
 #============================================================================================================
 #============================================================================================================
+@require_POST
+def update_company_account(request, account_id):
+    try:
+        account = CompanyAccount.objects.get(pk=account_id, is_active=True)
+    except CompanyAccount.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Conta não encontrada."}, status=404)
+
+    account_type_id = request.POST.get("account_type", "").strip()
+    name = request.POST.get("name", "").strip()
+    account_identifier = request.POST.get("account_identifier", "").strip()
+    balance_raw = request.POST.get("balance", "").strip()
+
+    if not account_type_id or not name or not account_identifier:
+        return JsonResponse(
+            {"success": False, "message": "Tipo de conta, nome e identificador são obrigatórios."},
+            status=400,
+        )
+
+    try:
+        acc_type = AccountType.objects.get(pk=account_type_id, is_active=True)
+    except AccountType.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Tipo de conta inválido."}, status=400)
+
+    try:
+        balance = Decimal(str(balance_raw)) if balance_raw != "" else account.balance or Decimal("0")
+    except Exception:
+        return JsonResponse({"success": False, "message": "Saldo inválido."}, status=400)
+
+    account.account_type = acc_type
+    account.name = name
+    account.account_identifier = account_identifier
+    account.balance = balance
+    account.save(update_fields=["account_type", "name", "account_identifier", "balance"])
+
+    return JsonResponse({"success": True, "message": "Conta actualizada com sucesso."})
 
 
 #============================================================================================================
 #============================================================================================================
+@require_POST
+def deactivate_company_account(request, account_id):
+    try:
+        account = CompanyAccount.objects.get(pk=account_id, is_active=True)
+    except CompanyAccount.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Conta não encontrada."}, status=404)
 
+    account.is_active = False
+    account.save(update_fields=["is_active"])
+
+    return JsonResponse({"success": True, "message": "Conta desactivada com sucesso."})
 
 #============================================================================================================
 #============================================================================================================

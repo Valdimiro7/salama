@@ -35,8 +35,10 @@
                     <th>ID</th>
                     <th>Data</th>
                     <th>Categoria</th>
+                    <th>Conta da Empresa</th>
                     <th>Descrição</th>
                     <th>Valor (MT)</th>
+                    <th>Anexo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -45,8 +47,23 @@
                     <td>{{ e.id }}</td>
                     <td>{{ e.expense_date }}</td>
                     <td>{{ e.category.name }}</td>
+                    <td>
+                      {{ e.company_account.name }}
+                      <br><small class="text-muted">{{ e.company_account.account_identifier }}</small>
+                    </td>
                     <td>{{ e.description }}</td>
                     <td>{{ e.amount|floatformat:2 }}</td>
+                    <td>
+                        {% if e.attachment %}
+                            <a href="{% url 'core:download_expense_attachment' e.id %}"
+                            class="btn btn-sm btn-outline-primary">
+                            <i class="material-symbols-rounded" style="font-size:18px;">attach_file</i>
+                            </a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -67,7 +84,8 @@
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="addExpenseForm">
+      <!-- IMPORTANTE: enctype para upload de ficheiros -->
+      <form id="addExpenseForm" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-header">
           <h5 class="modal-title" id="addExpenseModalLabel">Nova Despesa</h5>
@@ -76,15 +94,15 @@
         <div class="modal-body">
 
           <div class="mb-3">
+            <label class="form-label">Data *</label>
             <div class="input-group input-group-outline">
-              <label class="form-label">Data *</label>
               <input type="date" class="form-control" name="expense_date" id="id_expense_date">
             </div>
           </div>
 
           <div class="mb-3">
+            <label class="form-label">Categoria *</label>
             <div class="input-group input-group-outline">
-              <label class="form-label">Categoria *</label>
               <select class="form-select" name="category" id="id_expense_category">
                 <option value="">— Seleccione —</option>
                 {% for c in categories %}
@@ -95,17 +113,40 @@
           </div>
 
           <div class="mb-3">
+            <label class="form-label">Conta da Empresa *</label>
             <div class="input-group input-group-outline">
-              <label class="form-label">Descrição *</label>
+              <select class="form-select" name="company_account" id="id_expense_company_account">
+                <option value="">— Seleccione —</option>
+                {% for ca in company_accounts %}
+                  <option value="{{ ca.id }}">
+                    {{ ca.name }} ({{ ca.account_type.get_category_display }}) - {{ ca.account_identifier }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Descrição *</label>
+            <div class="input-group input-group-outline">
               <input type="text" class="form-control" name="description" id="id_expense_description">
             </div>
           </div>
 
           <div class="mb-3">
+            <label class="form-label">Valor (MT) *</label>
             <div class="input-group input-group-outline">
-              <label class="form-label">Valor (MT) *</label>
               <input type="number" step="0.01" class="form-control" name="amount" id="id_expense_amount">
             </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Anexo (opcional)</label>
+            <div class="input-group input-group-outline">
+              <input type="file" class="form-control" name="attachment" id="id_expense_attachment"
+                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+            </div>
+            <small class="text-muted">Ex: comprovativo, recibo, factura, etc.</small>
           </div>
 
         </div>
@@ -128,7 +169,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // Default data = hoje
+      // Data default = hoje
       const today = new Date();
       const yyyy = today.getFullYear();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -144,23 +185,30 @@
         }
       });
 
+      // Submeter formulário com ficheiro -> usar FormData
       $('#addExpenseForm').on('submit', function (e) {
         e.preventDefault();
 
         const date = $('#id_expense_date').val();
         const category = $('#id_expense_category').val();
+        const companyAccount = $('#id_expense_company_account').val();
         const description = $('#id_expense_description').val().trim();
         const amount = $('#id_expense_amount').val().trim();
 
-        if (!date || !category || !description || !amount) {
+        if (!date || !category || !companyAccount || !description || !amount) {
           Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
           return;
         }
 
+        const formEl = document.getElementById('addExpenseForm');
+        const formData = new FormData(formEl);
+
         $.ajax({
           url: "{% url 'core:create_expense' %}",
           type: "POST",
-          data: $(this).serialize(),
+          data: formData,
+          processData: false,  // NÃO processar (por causa do ficheiro)
+          contentType: false,  // deixar o browser definir o boundary
           headers: { "X-CSRFToken": "{{ csrf_token }}" },
           success: function (resp) {
             if (resp.success) {
@@ -182,6 +230,7 @@
           }
         });
       });
+
     });
   </script>
 {% endblock extra_js %}
