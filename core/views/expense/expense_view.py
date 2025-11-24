@@ -8,6 +8,7 @@ from core.models import (
     CompanyAccount,
     ExpenseCategory,
     Expense,
+    Transaction,
 )
 from django.views.decorators.http import require_POST
 import os
@@ -79,7 +80,7 @@ def create_expense(request):
     expense_date = request.POST.get("expense_date", "").strip()
     description = request.POST.get("description", "").strip()
     amount_raw = request.POST.get("amount", "").strip()
-    attachment_file = request.FILES.get("attachment")  # NOVO
+    attachment_file = request.FILES.get("attachment")
 
     if not category_id or not company_account_id or not expense_date or not description or not amount_raw:
         return JsonResponse(
@@ -114,7 +115,7 @@ def create_expense(request):
             status=400,
         )
 
-    # Validar formato da data (YYYY-MM-DD)
+    # Validar formato da data
     try:
         timezone.datetime.strptime(expense_date, "%Y-%m-%d")
     except ValueError:
@@ -123,7 +124,11 @@ def create_expense(request):
             status=400,
         )
 
-    # Criar despesa com/sem anexo
+    # Saldo antes
+    old_balance = company_account.balance or Decimal("0")
+    new_balance = old_balance - amount
+
+    # Criar despesa
     expense = Expense(
         category=category,
         company_account=company_account,
@@ -133,19 +138,33 @@ def create_expense(request):
         is_active=True,
         created_at=timezone.now(),
     )
-
     if attachment_file:
         expense.attachment = attachment_file
-
     expense.save()
 
-    # Deduzir saldo da conta da empresa
-    company_account.balance = (company_account.balance or Decimal("0")) - amount
+    # Actualizar saldo da conta
+    company_account.balance = new_balance
     company_account.save(update_fields=["balance"])
 
-    return JsonResponse(
-        {"success": True, "message": "Despesa registada e saldo deduzido com sucesso."}
+    # Criar transacção (saída)
+    Transaction.objects.create(
+        company_account=company_account,
+        tx_type=Transaction.TX_TYPE_OUT,
+        source_type="expense",
+        source_id=expense.id,
+        tx_date=expense_date,
+        description=f"Despesa: {description}",
+        amount=amount,
+        balance_before=old_balance,
+        balance_after=new_balance,
+        is_active=True,
+        created_at=timezone.now(),
     )
+
+    return JsonResponse(
+        {"success": True, "message": "Despesa registada, saldo deduzido e transacção criada com sucesso."}
+    )
+
 
 
 

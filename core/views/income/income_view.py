@@ -13,6 +13,7 @@ from core.models import (
     Expense,
     IncomeCategory,
     Income,
+    Transaction,
 )
 import os
 from django.http import JsonResponse, FileResponse, Http404
@@ -82,7 +83,7 @@ def create_income(request):
     income_date = request.POST.get("income_date", "").strip()
     description = request.POST.get("description", "").strip()
     amount_raw = request.POST.get("amount", "").strip()
-    attachment_file = request.FILES.get("attachment")   # NOVO
+    attachment_file = request.FILES.get("attachment")
 
     if not category_id or not company_account_id or not income_date or not description or not amount_raw:
         return JsonResponse(
@@ -117,7 +118,7 @@ def create_income(request):
             status=400,
         )
 
-    # Validar data
+    # Validar formato da data
     try:
         timezone.datetime.strptime(income_date, "%Y-%m-%d")
     except ValueError:
@@ -126,7 +127,11 @@ def create_income(request):
             status=400,
         )
 
-    # Criar rendimento com/sem anexo
+    # Saldo antes
+    old_balance = company_account.balance or Decimal("0")
+    new_balance = old_balance + amount
+
+    # Criar rendimento
     income = Income(
         category=category,
         company_account=company_account,
@@ -136,18 +141,31 @@ def create_income(request):
         is_active=True,
         created_at=timezone.now(),
     )
-
     if attachment_file:
         income.attachment = attachment_file
-
     income.save()
 
-    # Creditar saldo da conta da empresa
-    company_account.balance = (company_account.balance or Decimal("0")) + amount
+    # Actualizar saldo
+    company_account.balance = new_balance
     company_account.save(update_fields=["balance"])
 
+    # Criar transacção (entrada)
+    Transaction.objects.create(
+        company_account=company_account,
+        tx_type=Transaction.TX_TYPE_IN,
+        source_type="income",
+        source_id=income.id,
+        tx_date=income_date,
+        description=f"Rendimento: {description}",
+        amount=amount,
+        balance_before=old_balance,
+        balance_after=new_balance,
+        is_active=True,
+        created_at=timezone.now(),
+    )
+
     return JsonResponse(
-        {"success": True, "message": "Rendimento registado e saldo creditado com sucesso."}
+        {"success": True, "message": "Rendimento registado, saldo creditado e transacção criada com sucesso."}
     )
 
 

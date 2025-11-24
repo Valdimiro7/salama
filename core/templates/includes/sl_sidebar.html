@@ -204,23 +204,12 @@
                 <div class="collapse" id="menu-transaccoes">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> NT </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Nova Transacção </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:transaction_list' %}">
+                            <span class="sidenav-mini-icon"> HT </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Histórico de Transacções </span>
+                        </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> HT </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Histórico de Transacções </span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> CT </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Categoria de Transacções </span>
-                            </a>
-                        </li>
+
                     </ul>
                 </div>
             </li>

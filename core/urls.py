@@ -7,6 +7,7 @@ from core.views.account.account_view import company_account_list, create_company
 from core.views.expense.expense_view import expense_category_list, create_expense_category
 from core.views.expense.expense_view import expense_list, create_expense, download_expense_attachment
 from core.views.income.income_view import income_category_list, create_income_category, income_list, create_income, download_income_attachment
+from core.views.transaction.transaction_view import transaction_list
 
 app_name = "core"
 
@@ -48,5 +49,10 @@ urlpatterns = [
     path("incomes/", income_list, name="income_list"),
     path("incomes/create/", create_income, name="create_income"),
     path("incomes/<int:income_id>/download/", download_income_attachment, name="download_income_attachment"),
+    
+    
+    # Transações
+    path("transactions/", transaction_list, name="transaction_list"),
+
 
 ]

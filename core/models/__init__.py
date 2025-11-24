@@ -7,6 +7,7 @@ from .expensecategory import ExpenseCategory
 from .expense import Expense
 from .incomecategory import IncomeCategory
 from .income import Income
+from .transaction import Transaction
 
 __all__ = [
     'Member',
@@ -17,4 +18,5 @@ __all__ = [
     'Expense',
     'IncomeCategory',
     'Income',
+    'Transaction',
 ]
