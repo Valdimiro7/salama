@@ -4,6 +4,8 @@ from core.views.member.member_view import add_member, member_list, update_member
 from core.views.account.account_view import account_type_list, create_account_type
 from core.views.account.account_view import client_account_list, create_client_account
 from core.views.account.account_view import company_account_list, create_company_account
+from core.views.expense.expense_view import expense_category_list, create_expense_category
+from core.views.expense.expense_view import expense_list, create_expense
 
 app_name = "core"
 
@@ -27,4 +29,9 @@ urlpatterns = [
     # Contas da Empresa
     path("accounts/company/", company_account_list, name="company_account_list"),
     path("accounts/company/create/", create_company_account, name="create_company_account"),
+    
+    path("expenses/categories/", expense_category_list, name="expense_category_list"),
+    path("expenses/categories/create/", create_expense_category, name="create_expense_category"),
+    path("expenses/", expense_list, name="expense_list"),
+    path("expenses/create/", create_expense, name="create_expense"),
 ]

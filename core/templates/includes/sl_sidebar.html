@@ -234,23 +234,19 @@
                 </a>
                 <div class="collapse" id="menu-despesas">
                     <ul class="nav ms-4">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> CD </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Categoria de Despesas </span>
-                            </a>
+                        
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> ND </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Nova Despesa </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:expense_list' %}">
+                            <span class="sidenav-mini-icon"> LD </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Lista de Despesas </span>
+                        </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
-                                <span class="sidenav-mini-icon"> TD </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Todas as Despesas </span>
-                            </a>
+                        <a class="nav-link text-dark" href="{% url 'core:expense_category_list' %}">
+                            <span class="sidenav-mini-icon"> CD </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Categoria de Despesas </span>
+                        </a>
                         </li>
                     </ul>
                 </div>
