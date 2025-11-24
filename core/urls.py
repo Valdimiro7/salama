@@ -11,6 +11,8 @@ from core.views.transaction.transaction_view import transaction_list
 from core.views.interest.interest_view import interest_type_list, create_interest_type, interest_calculator
 from core.views.loan.loan_views import new_loan
 from core.views.loan.loan_type_views import loan_type_list, create_loan_type, update_loan_type, toggle_loan_type
+from core.views.loan.loan_views import pending_loans_list, confirm_loan
+from core.views.payments.payments_view import loan_payment_requests_list, mark_loan_payment_paid
 
 app_name = "core"
 
@@ -72,5 +74,11 @@ urlpatterns = [
     path("loan-types/create/", create_loan_type, name="create_loan_type"),
     path("loan-types/<int:type_id>/update/", update_loan_type, name="update_loan_type"),
     path("loan-types/<int:type_id>/toggle/", toggle_loan_type, name="toggle_loan_type"),
+    
+    path("loans/pending/", pending_loans_list, name="pending_loans"),
+    path("loans/<int:loan_id>/confirm/", confirm_loan, name="confirm_loan"),
+
+    path("loan-payments/", loan_payment_requests_list, name="loan_payment_list"),
+    path("loan-payments/<int:pr_id>/mark-paid/", mark_loan_payment_paid, name="mark_loan_payment_paid"),
 
 ]

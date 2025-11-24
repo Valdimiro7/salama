@@ -13,6 +13,7 @@ from .loan import Loan
 from .loantype import LoanType
 from .loanguarantor import LoanGuarantor
 from .loanguarantee import LoanGuarantee
+from .loanpaymentrequest import LoanPaymentRequest
 
 __all__ = [
     'Member',
@@ -29,4 +30,5 @@ __all__ = [
     'LoanType',
     'LoanGuarantor',
     'LoanGuarantee',
+    'LoanPaymentRequest',
 ]

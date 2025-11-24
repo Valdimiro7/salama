@@ -72,7 +72,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
+                            <a class="nav-link text-dark" href="{% url 'core:pending_loans' %}">
                                 <span class="sidenav-mini-icon"> PD </span>
                                 <span class="sidenav-normal ms-2 ps-1"> Empréstimos Pendentes </span>
                             </a>
@@ -103,15 +103,21 @@
                 <div class="collapse" id="menu-pagamentos">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="#">
+                            <a class="nav-link text-dark" href="{% url 'core:loan_payment_list' %}">
                                 <span class="sidenav-mini-icon"> PE </span>
                                 <span class="sidenav-normal ms-2 ps-1"> Pagamento de Empréstimo </span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="#">
+                                <span class="sidenav-mini-icon"> RE </span>
+                                <span class="sidenav-normal ms-2 ps-1"> Reembolso de Empréstimo </span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="#">
                                 <span class="sidenav-mini-icon"> PC </span>
-                                <span class="sidenav-normal ms-2 ps-1"> Pagamentos a Caminho </span>
+                                <span class="sidenav-normal ms-2 ps-1"> Proximos Pagamentos</span>
                             </a>
                         </li>
                     </ul>

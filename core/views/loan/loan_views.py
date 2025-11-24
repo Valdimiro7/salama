@@ -1,10 +1,15 @@
 from decimal import Decimal
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
+from datetime import datetime
 
-from core.models import Member, LoanType, InterestType, CompanyAccount, Loan, LoanGuarantor, LoanGuarantee
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from core.models import Member, LoanType, InterestType, CompanyAccount, Loan, LoanGuarantor, LoanGuarantee, Transaction, LoanPaymentRequest
 #============================================================================================================
 #============================================================================================================
 
@@ -144,7 +149,7 @@ def new_loan(request):
                 purpose=purpose or None,
                 remarks=remarks or None,
                 attachment=attachment,
-                status="approved",  # por agora vamos assumir aprovado
+                status="pending",
                 created_by=request.user if request.user.is_authenticated else None,
             )
             
@@ -227,10 +232,65 @@ def new_loan(request):
 #============================================================================================================
 #============================================================================================================
 
+def pending_loans_list(request):
+    """
+    Lista de empréstimos com status 'pending'.
+    """
+    loans = (
+        Loan.objects
+        .select_related("member", "loan_type", "interest_type")
+        .filter(status="pending")
+        .order_by("-id")
+    )
+    context = {"loans": loans}
+    return render(request, "loan/pending_loans_list.html", context)
 
 #============================================================================================================
 #============================================================================================================
+@require_POST
+def confirm_loan(request, loan_id):
+    """
+    Confirma um empréstimo pendente:
+    - muda status para 'active'
+    - cria o 1º LoanPaymentRequest (pedido de pagamento) em estado 'pending'
+    """
+    try:
+        loan = Loan.objects.select_related("member").get(pk=loan_id)
+    except Loan.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Empréstimo não encontrado."}, status=404)
 
+    if loan.status != "pending":
+        return JsonResponse(
+            {"success": False, "message": "Apenas empréstimos pendentes podem ser confirmados."},
+            status=400,
+        )
+
+    # Escolher data de vencimento: primeira data config. ou hoje
+    due_date = loan.first_payment_date or loan.release_date or timezone.localdate()
+
+    amount_due = loan.payment_per_period or loan.principal_amount
+    if not amount_due:
+        return JsonResponse(
+            {"success": False, "message": "Valor de pagamento por ciclo não definido para este empréstimo."},
+            status=400,
+        )
+
+    # Actualizar status do empréstimo
+    loan.status = "active"
+    loan.save(update_fields=["status"])
+
+    # Criar pedido de pagamento
+    LoanPaymentRequest.objects.create(
+        loan=loan,
+        member=loan.member,
+        due_date=due_date,
+        amount_due=amount_due,
+        status="pending",
+    )
+
+    return JsonResponse(
+        {"success": True, "message": "Empréstimo confirmado e primeiro pedido de pagamento criado."}
+    )
 
 #============================================================================================================
 #============================================================================================================
