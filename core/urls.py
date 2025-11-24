@@ -6,6 +6,7 @@ from core.views.account.account_view import client_account_list, create_client_a
 from core.views.account.account_view import company_account_list, create_company_account, update_company_account, deactivate_company_account
 from core.views.expense.expense_view import expense_category_list, create_expense_category
 from core.views.expense.expense_view import expense_list, create_expense, download_expense_attachment
+from core.views.income.income_view import income_category_list, create_income_category, income_list, create_income, download_income_attachment
 
 app_name = "core"
 
@@ -37,4 +38,15 @@ urlpatterns = [
     path("expenses/", expense_list, name="expense_list"),
     path("expenses/create/", create_expense, name="create_expense"),
      path("expenses/<int:expense_id>/download/", download_expense_attachment, name="download_expense_attachment"),
+     
+     
+     # Rendimentos - Tipos
+    path("incomes/categories/", income_category_list, name="income_category_list"),
+    path("incomes/categories/create/", create_income_category, name="create_income_category"),
+
+    # Rendimentos - Lançamentos
+    path("incomes/", income_list, name="income_list"),
+    path("incomes/create/", create_income, name="create_income"),
+    path("incomes/<int:income_id>/download/", download_income_attachment, name="download_income_attachment"),
+
 ]

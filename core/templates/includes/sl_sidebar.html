@@ -230,7 +230,7 @@
                 <a class="nav-link text-dark" data-bs-toggle="collapse" href="#menu-despesas" role="button"
                    aria-expanded="false" aria-controls="menu-despesas">
                     <i class="material-symbols-rounded opacity-5">receipt_long</i>
-                    <span class="nav-link-text ms-2 ps-1">Despesas</span>
+                    <span class="nav-link-text ms-2 ps-1">Despesas & Rendimentos</span>
                 </a>
                 <div class="collapse" id="menu-despesas">
                     <ul class="nav ms-4">
@@ -239,7 +239,13 @@
                         <li class="nav-item">
                         <a class="nav-link text-dark" href="{% url 'core:expense_list' %}">
                             <span class="sidenav-mini-icon"> LD </span>
-                            <span class="sidenav-normal ms-2 ps-1"> Lista de Despesas </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Despesas </span>
+                        </a>
+                        </li>
+                        <li class="nav-item">
+                        <a class="nav-link text-dark" href="{% url 'core:income_list' %}">
+                            <span class="sidenav-mini-icon"> LR </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Rendimentos </span>
                         </a>
                         </li>
                         <li class="nav-item">
@@ -248,6 +254,14 @@
                             <span class="sidenav-normal ms-2 ps-1"> Categoria de Despesas </span>
                         </a>
                         </li>
+                        <li class="nav-item">
+                        <a class="nav-link text-dark" href="{% url 'core:income_category_list' %}">
+                            <span class="sidenav-mini-icon"> TR </span>
+                            <span class="sidenav-normal ms-2 ps-1"> Categoria de Rendimentos </span>
+                        </a>
+                        </li>
+                        
+
                     </ul>
                 </div>
             </li>

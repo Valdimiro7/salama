@@ -5,6 +5,8 @@ from .clientaccount import ClientAccount
 from .companyaccount import CompanyAccount
 from .expensecategory import ExpenseCategory
 from .expense import Expense
+from .incomecategory import IncomeCategory
+from .income import Income
 
 __all__ = [
     'Member',
@@ -13,4 +15,6 @@ __all__ = [
     'CompanyAccount',
     'ExpenseCategory',
     'Expense',
+    'IncomeCategory',
+    'Income',
 ]
