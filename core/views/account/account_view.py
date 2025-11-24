@@ -1,8 +1,9 @@
-from core.models import Member, AccountType, ClientAccount, CompanyAccount
+from core.models import Member, AccountType, ClientAccount, CompanyAccount, Transaction
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import render
 from decimal import Decimal
+from django.utils import timezone
 
 
 
@@ -208,18 +209,52 @@ def update_company_account(request, account_id):
     except AccountType.DoesNotExist:
         return JsonResponse({"success": False, "message": "Tipo de conta inválido."}, status=400)
 
+    # Saldo antes da alteração
+    old_balance = account.balance or Decimal("0")
+
+    # Calcular novo saldo
     try:
-        balance = Decimal(str(balance_raw)) if balance_raw != "" else account.balance or Decimal("0")
+        if balance_raw != "":
+            new_balance = Decimal(str(balance_raw))
+        else:
+            new_balance = old_balance
     except Exception:
         return JsonResponse({"success": False, "message": "Saldo inválido."}, status=400)
 
+    # Actualizar campos da conta
     account.account_type = acc_type
     account.name = name
     account.account_identifier = account_identifier
-    account.balance = balance
+    account.balance = new_balance
     account.save(update_fields=["account_type", "name", "account_identifier", "balance"])
 
+    # Se o saldo mudou, registar transacção de ajuste manual
+    if new_balance != old_balance:
+        if new_balance > old_balance:
+            tx_type = Transaction.TX_TYPE_IN
+            amount = new_balance - old_balance
+            desc = f"Ajuste manual de saldo (+{amount})"
+        else:
+            tx_type = Transaction.TX_TYPE_OUT
+            amount = old_balance - new_balance
+            desc = f"Ajuste manual de saldo (-{amount})"
+
+        Transaction.objects.create(
+            company_account=account,
+            tx_type=tx_type,
+            source_type="manual",
+            source_id=None,
+            tx_date=timezone.localdate(),
+            description=desc,
+            amount=amount,
+            balance_before=old_balance,
+            balance_after=new_balance,
+            is_active=True,
+            created_at=timezone.now(),
+        )
+
     return JsonResponse({"success": True, "message": "Conta actualizada com sucesso."})
+
 
 
 #============================================================================================================

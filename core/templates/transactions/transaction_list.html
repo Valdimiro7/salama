@@ -19,10 +19,10 @@
               <div>
                 <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
                 <p class="text-sm text-muted mb-0">
-                  Entradas e saídas de dinheiro registadas automaticamente a partir de Despesas e Rendimentos.
+                  Entradas e saídas de dinheiro registadas automaticamente a partir de Despesas, Rendimentos e ajustes manuais.
                 </p>
               </div>
-              <!-- futuro: botão para Nova Transação manual -->
+              <!-- futuro: botão Nova Transacção manual -->
             </div>
 
             <div class="table-responsive">
@@ -89,15 +89,35 @@
 {% endblock content %}
 
 {% block extra_js %}
+  <!-- DataTables core -->
 
+
+  <!-- DataTables Buttons -->
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       $('#transactions-table').DataTable({
-        pageLength: 10,
+        pageLength: 25,
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
         order: [[1, 'desc'], [0, 'desc']],
-        language: { url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json" }
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        },
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copiar', className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',    className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',  className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',    className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+        ]
       });
     });
   </script>
