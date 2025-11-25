@@ -37,7 +37,7 @@
               <div class="col-md-3 col-sm-6 mb-3">
                 <div class="card shadow-sm border-0 h-100">
                   <div class="card-body py-3">
-                    <p class="text-sm text-muted mb-1">Saldo em dívida total (principal + juros)</p>
+                    <p class="text-sm text-muted mb-1">Saldo em dívida total (principal + juros em falta)</p>
                     <h5 class="mb-0">{{ kpi_total_outstanding|floatformat:2 }}</h5>
                   </div>
                 </div>
@@ -56,7 +56,7 @@
               <div>
                 <h6 class="mb-0">Empréstimos com saldo em dívida</h6>
                 <p class="text-sm text-muted mb-0">
-                  Saldo em dívida = principal em aberto + juros do período, de acordo com o tipo de juro configurado no empréstimo.
+                  Saldo em dívida = principal em aberto + juros em falta no ciclo actual. Validade indica o fim do ciclo de 30 dias.
                 </p>
               </div>
             </div>
@@ -73,10 +73,10 @@
                     <th>Taxa de Juro</th>
                     <th>Principal (MT)</th>
                     <th>Principal em dívida (MT)</th>
-                    <th>Juros do período (MT)</th>
+                    <th>Juros em falta (MT)</th>
                     <th>Saldo em dívida (MT)</th>
+                    <th>Validade</th>
                     <th>Último pagamento</th>
-                    <th>Conta da Empresa (últ. pagamento)</th>
                     <th style="width: 180px;">Actions</th>
                   </tr>
                 </thead>
@@ -84,7 +84,9 @@
                   {% for loan in loans %}
                     <tr data-loan-id="{{ loan.id }}"
                         data-outstanding="{{ loan.outstanding_principal|floatformat:2 }}"
+                        data-interest-remaining="{{ loan.period_interest_remaining|floatformat:2 }}"
                         data-interest-rate="{{ loan.interest_type.rate|default_if_none:'0.0000' }}"
+                        data-cycle-due="{{ loan.current_cycle_due|default_if_none:'' }}"
                         data-member-name="{{ loan.member.first_name }} {{ loan.member.last_name }}">
                       <td>{{ loan.id }}</td>
                       <td>
@@ -104,7 +106,7 @@
                       </td>
                       <td>{{ loan.principal_amount|floatformat:2 }}</td>
                       <td>{{ loan.outstanding_principal|floatformat:2 }}</td>
-                      <td>{{ loan.period_interest_due|floatformat:2 }}</td>
+                      <td>{{ loan.period_interest_remaining|floatformat:2 }}</td>
                       <td>
                         {% if loan.outstanding_with_interest > 0 %}
                           <span class="badge bg-danger">
@@ -112,6 +114,16 @@
                           </span>
                         {% else %}
                           <span class="badge bg-success">0.00</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if loan.current_cycle_due %}
+                          {{ loan.current_cycle_due }}
+                          {% if loan.current_cycle_due < today %}
+                            <br><span class="badge bg-danger mt-1">Vencido</span>
+                          {% endif %}
+                        {% else %}
+                          —
                         {% endif %}
                       </td>
                       <td>
@@ -124,16 +136,6 @@
                           </small>
                         {% else %}
                           <span class="text-muted">Sem pagamentos</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if loan.last_repayment %}
-                          {{ loan.last_repayment.company_account.name }}<br>
-                          <small class="text-muted">
-                            {{ loan.last_repayment.company_account.account_identifier }}
-                          </small>
-                        {% else %}
-                          —
                         {% endif %}
                       </td>
                       <td>
@@ -166,7 +168,6 @@
   {% include "includes/sl_footer.html" %}
 </div>
 
-<!-- MODAL: REGISTAR REEMBOLSO -->
 <!-- MODAL: REGISTAR REEMBOLSO -->
 <div class="modal fade" id="repaymentModal" tabindex="-1" aria-labelledby="repaymentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -243,7 +244,7 @@
               <input type="number" step="0.01" class="form-control" name="amount" id="id_rep_amount">
             </div>
             <small class="text-muted" id="repaymentAmountHint">
-              O sistema irá aplicar primeiro aos juros do período, depois à amortização de principal.
+              O valor será aplicado primeiro aos juros em falta deste ciclo e depois à amortização de principal.
             </small>
           </div>
 
@@ -283,7 +284,6 @@
     </div>
   </div>
 </div>
-
 {% endblock content %}
 
 {% block extra_js %}
@@ -298,180 +298,190 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const table = $('#loan-repayment-table').DataTable({
-      pageLength: 25,
-      lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
-      order: [[0, 'desc']],
-      dom: 'lBfrtip',
-      buttons: [
-        { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
-        { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
-        { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
-        { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
-        { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
-      ],
-      language: {
-        url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
-      }
-    });
-
-    // data default = hoje
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth()+1).padStart(2,'0');
-    const dd = String(today.getDate()).padStart(2,'0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-    $('#id_rep_payment_date').val(todayStr);
-
-    let currentOutstanding = 0;
-    let currentRate = 0;
-    let currentInterest = 0;
-    let currentMaxTotal = 0;
-
-    function recalcInfoBox() {
-      const outstanding = currentOutstanding;
-      const rate = currentRate;
-      const rateDecimal = rate / 100.0;
-      const interest = +(outstanding * rateDecimal).toFixed(2);
-      const maxTotal = +(outstanding + interest).toFixed(2);
-
-      currentInterest = interest;
-      currentMaxTotal = maxTotal;
-
-      const html = `
-        <strong>Resumo deste ciclo:</strong><br>
-        Principal em dívida: <strong>MT ${outstanding.toFixed(2)}</strong><br>
-        Taxa de juro do período: <strong>${rate.toFixed(2)}%</strong><br>
-        Juros do período: <strong>MT ${interest.toFixed(2)}</strong><br>
-        Saldo em dívida (principal + juros): <strong>MT ${maxTotal.toFixed(2)}</strong><br>
-        <small class="text-muted">
-          - "Liquidar apenas juros": paga MT ${interest.toFixed(2)} e renova o empréstimo.<br>
-          - "Liquidar toda a conta": paga MT ${maxTotal.toFixed(2)} e encerra o empréstimo.<br>
-          - "Pagamento parcial": paga juros do período + parte do principal.
-        </small>
-      `;
-      $('#repaymentInfoBox').html(html);
-    }
-
-    function applyRepaymentTypeToAmount() {
-      const type = $('input[name="repayment_type"]:checked').val();
-      const amountField = $('#id_rep_amount');
-      const hintField = $('#repaymentAmountHint');
-
-      if (type === 'interest_only') {
-        amountField.val(currentInterest.toFixed(2));
-        amountField.prop('readonly', true);
-        hintField.text(
-          `Será liquidado apenas o valor de juros deste período (MT ${currentInterest.toFixed(2)}). `
-          + `O principal mantém-se igual.`
-        );
-      } else if (type === 'full') {
-        amountField.val(currentMaxTotal.toFixed(2));
-        amountField.prop('readonly', true);
-        hintField.text(
-          `Será liquidado o valor total em dívida (principal + juros: MT ${currentMaxTotal.toFixed(2)}). `
-          + `O empréstimo será encerrado.`
-        );
-      } else {
-        // partial
-        amountField.val('');
-        amountField.prop('readonly', false);
-        hintField.text(
-          'O valor pago será aplicado primeiro aos juros do período e depois à amortização de principal. '
-          + `Valor recomendado mínimo: MT ${currentInterest.toFixed(2)}.`
-        );
-      }
-    }
-
-    // abrir modal
-    $(document).on('click', '.btn-open-repayment-modal', function () {
-      const tr = $(this).closest('tr');
-      const loanId = tr.data('loan-id');
-      const memberName = tr.data('member-name');
-      const outstanding = parseFloat(tr.data('outstanding') || '0') || 0;
-      const rate = parseFloat(tr.data('interest-rate') || '0') || 0;
-
-      currentOutstanding = outstanding;
-      currentRate = rate;
-
-      $('#id_rep_loan_id').val(loanId);
-      $('#id_rep_company_account').val('');
-      $('#id_rep_payment_date').val(todayStr);
-      $('#id_rep_amount').val('');
-      $('#id_rep_method').val('cash');
-      $('#id_rep_attachment').val('');
-      $('#id_rep_notes').val('');
-
-      // default = pagamento parcial
-      $('#rep_type_partial').prop('checked', true);
-
-      $('#repaymentModalLabel').text('Registar Reembolso · Loan #' + loanId);
-      $('#repaymentModalSubtitle').text(memberName || '');
-
-      recalcInfoBox();
-      applyRepaymentTypeToAmount();
-
-      const modalEl = document.getElementById('repaymentModal');
-      const bsModal = new bootstrap.Modal(modalEl);
-      bsModal.show();
-    });
-
-    // mudar tipo de reembolso
-    $(document).on('change', 'input[name="repayment_type"]', function () {
-      applyRepaymentTypeToAmount();
-    });
-
-    // submeter pagamento
-    $('#repaymentForm').on('submit', function (e) {
-      e.preventDefault();
-
-      const loanId = $('#id_rep_loan_id').val();
-      const companyAccount = $('#id_rep_company_account').val();
-      const paymentDate = $('#id_rep_payment_date').val();
-      const amount = $('#id_rep_amount').val().trim();
-      const repaymentType = $('input[name="repayment_type"]:checked').val();
-
-      if (!companyAccount || !paymentDate || !amount) {
-        Swal.fire('Validação', 'Preencha tipo de reembolso, conta, data e valor do pagamento.', 'warning');
-        return;
-      }
-
-      const formData = new FormData(this);
-      formData.set('repayment_type', repaymentType);
-
-      $.ajax({
-        url: "{% url 'core:register_repayment' 0 %}".replace('/0/', '/' + loanId + '/'),
-        type: "POST",
-        data: formData,
-        processData: false,
-        contentType: false,
-        headers: { "X-CSRFToken": "{{ csrf_token }}" },
-        success: function (resp) {
-          if (resp.success) {
-            $('#repaymentModal').modal('hide');
-            Swal.fire({
-              icon: "success",
-              title: "Pagamento registado",
-              text: resp.message,
-              timer: 2500,
-              showConfirmButton: false
-            }).then(() => window.location.reload());
-          } else {
-            Swal.fire("Erro", resp.message || "Falha ao registar pagamento.", "error");
-          }
-        },
-        error: function (xhr) {
-          let msg = "Falha ao registar pagamento.";
-          if (xhr.responseJSON && xhr.responseJSON.message) {
-            msg = xhr.responseJSON.message;
-          }
-          Swal.fire("Erro", msg, "error");
+    document.addEventListener('DOMContentLoaded', function () {
+      const table = $('#loan-repayment-table').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[0, 'desc']],
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
         }
       });
+
+      // data default = hoje
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth()+1).padStart(2,'0');
+      const dd = String(today.getDate()).padStart(2,'0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+      $('#id_rep_payment_date').val(todayStr);
+
+      let currentOutstanding = 0;
+      let currentInterestRemaining = 0;
+      let currentRate = 0;
+      let currentDue = '';
+
+      function updateInfoBox() {
+        const principal = currentOutstanding;
+        const interestRemaining = currentInterestRemaining;
+        const rate = currentRate;
+        const totalDueNow = +(principal + interestRemaining).toFixed(2);
+
+        const html = `
+          <strong>Resumo deste ciclo:</strong><br>
+          Principal em dívida: <strong>MT ${principal.toFixed(2)}</strong><br>
+          Taxa de juro do período: <strong>${rate.toFixed(2)}%</strong><br>
+          Juros em falta neste ciclo: <strong>MT ${interestRemaining.toFixed(2)}</strong><br>
+          Saldo em dívida (principal + juros em falta): <strong>MT ${totalDueNow.toFixed(2)}</strong><br>
+          ${currentDue ? `<span class="badge bg-secondary mt-1">Validade: ${currentDue}</span><br>` : ''}
+          <small class="text-muted">
+            - "Liquidar apenas juros": paga os juros em falta e renova a validade (novo ciclo).<br>
+            - "Liquidar toda a conta": paga principal + juros em falta e encerra o empréstimo.<br>
+            - "Pagamento parcial": paga juros em falta + parte do principal.
+          </small>
+        `;
+        $('#repaymentInfoBox').html(html);
+      }
+
+      function applyRepaymentTypeToAmount() {
+        const type = $('input[name="repayment_type"]:checked').val();
+        const amountField = $('#id_rep_amount');
+        const hintField = $('#repaymentAmountHint');
+
+        const principal = currentOutstanding;
+        const interestRemaining = currentInterestRemaining;
+        const totalDueNow = +(principal + interestRemaining).toFixed(2);
+
+        if (type === 'interest_only') {
+          amountField.val(interestRemaining.toFixed(2));
+          amountField.prop('readonly', true);
+          hintField.text(
+            `Será liquidado apenas o valor de juros em falta neste ciclo (MT ${interestRemaining.toFixed(2)}). `
+            + `O principal mantém-se igual e a validade é renovada.`
+          );
+        } else if (type === 'full') {
+          amountField.val(totalDueNow.toFixed(2));
+          amountField.prop('readonly', true);
+          hintField.text(
+            `Será liquidado o valor total em dívida (principal + juros em falta: MT ${totalDueNow.toFixed(2)}). `
+            + `O empréstimo será encerrado.`
+          );
+        } else {
+          // partial
+          amountField.val('');
+          amountField.prop('readonly', false);
+          if (interestRemaining > 0) {
+            hintField.text(
+              'O valor pago será aplicado primeiro aos juros em falta deste ciclo '
+              + ` (mínimo MT ${interestRemaining.toFixed(2)}) e depois à amortização de principal.`
+            );
+          } else {
+            hintField.text(
+              'Não há juros em falta neste ciclo. O valor pago será aplicado integralmente à amortização do principal.'
+            );
+          }
+        }
+      }
+
+      // abrir modal
+      $(document).on('click', '.btn-open-repayment-modal', function () {
+        const tr = $(this).closest('tr');
+        const loanId = tr.data('loan-id');
+        const memberName = tr.data('member-name');
+        const outstanding = parseFloat(tr.data('outstanding') || '0') || 0;
+        const interestRemaining = parseFloat(tr.data('interest-remaining') || '0') || 0;
+        const rate = parseFloat(tr.data('interest-rate') || '0') || 0;
+        const due = tr.data('cycle-due') || '';
+
+        currentOutstanding = outstanding;
+        currentInterestRemaining = interestRemaining;
+        currentRate = rate;
+        currentDue = due;
+
+        $('#id_rep_loan_id').val(loanId);
+        $('#id_rep_company_account').val('');
+        $('#id_rep_payment_date').val(todayStr);
+        $('#id_rep_amount').val('');
+        $('#id_rep_method').val('cash');
+        $('#id_rep_attachment').val('');
+        $('#id_rep_notes').val('');
+
+        // default = parcial
+        $('#rep_type_partial').prop('checked', true);
+
+        $('#repaymentModalLabel').text('Registar Reembolso · Loan #' + loanId);
+        $('#repaymentModalSubtitle').text(memberName || '');
+
+        updateInfoBox();
+        applyRepaymentTypeToAmount();
+
+        const modalEl = document.getElementById('repaymentModal');
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+      });
+
+      // mudar tipo de reembolso
+      $(document).on('change', 'input[name="repayment_type"]', function () {
+        applyRepaymentTypeToAmount();
+      });
+
+      // submeter pagamento
+      $('#repaymentForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const loanId = $('#id_rep_loan_id').val();
+        const companyAccount = $('#id_rep_company_account').val();
+        const paymentDate = $('#id_rep_payment_date').val();
+        const amount = $('#id_rep_amount').val().trim();
+        const repaymentType = $('input[name="repayment_type"]:checked').val();
+
+        if (!companyAccount || !paymentDate || !amount) {
+          Swal.fire('Validação', 'Preencha tipo de reembolso, conta, data e valor do pagamento.', 'warning');
+          return;
+        }
+
+        const formData = new FormData(this);
+        formData.set('repayment_type', repaymentType);
+
+        $.ajax({
+          url: "{% url 'core:register_repayment' 0 %}".replace('/0/', '/' + loanId + '/'),
+          type: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          success: function (resp) {
+            if (resp.success) {
+              $('#repaymentModal').modal('hide');
+              Swal.fire({
+                icon: "success",
+                title: "Pagamento registado",
+                text: resp.message,
+                timer: 2500,
+                showConfirmButton: false
+              }).then(() => window.location.reload());
+            } else {
+              Swal.fire("Erro", resp.message || "Falha ao registar pagamento.", "error");
+            }
+          },
+          error: function (xhr) {
+            let msg = "Falha ao registar pagamento.";
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              msg = xhr.responseJSON.message;
+            }
+            Swal.fire("Erro", msg, "error");
+          }
+        });
+      });
+
     });
-
-  });
-</script>
-
+  </script>
 {% endblock extra_js %}

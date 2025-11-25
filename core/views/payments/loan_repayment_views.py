@@ -1,13 +1,12 @@
 from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime
-
 from django.contrib.auth.decorators import login_required
 from django.db import transaction as db_transaction
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+from django.db.models import Sum, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from datetime import datetime, timedelta
 
 from core.models import (
     Loan,
@@ -23,9 +22,10 @@ from core.models import (
 def loan_repayment_list(request):
     """
     Lista empréstimos com status 'disbursed' e mostra:
-    - principal em dívida
-    - juros do período (usando interest_type.rate)
-    - saldo em dívida = principal em dívida + juros do período
+    - principal em dívida (outstanding_principal)
+    - juros do período (total e em falta) com base no ciclo actual
+    - saldo em dívida = principal em dívida + juros em falta
+    - validade (loan.first_payment_date)
     """
 
     loans_qs = (
@@ -40,42 +40,80 @@ def loan_repayment_list(request):
 
     total_loans = len(loans)
     total_principal_all = Decimal("0")
-    total_outstanding_all = Decimal("0")  # saldo em dívida (principal + juros)
+    total_outstanding_all = Decimal("0")
+
+    today = timezone.localdate()
 
     for loan in loans:
-        total_principal_all += loan.principal_amount
+        repayments = loan.repayments.all()
 
-        # principal já pago
-        agg = loan.repayments.aggregate(total_principal=Sum("principal_amount"))
-        principal_paid = agg["total_principal"] or Decimal("0")
-        outstanding_principal = loan.principal_amount - principal_paid
+        # 1) Principal em dívida (global)
+        agg_tot = repayments.aggregate(total_principal=Sum("principal_amount"))
+        principal_paid_total = agg_tot["total_principal"] or Decimal("0")
+        outstanding_principal = loan.principal_amount - principal_paid_total
         if outstanding_principal < 0:
             outstanding_principal = Decimal("0")
 
         loan.outstanding_principal = outstanding_principal
+        total_principal_all += loan.principal_amount
 
-        # taxa de juros do período (ex: 3.0000 => 3%)
+        # 2) Determinar ciclo actual (usamos release_date e first_payment_date)
+        # ciclo_start = data de início do ciclo actual
+        # ciclo_due   = validade / data limite do ciclo
+        cycle_start = loan.release_date or loan.created_at.date()
+        cycle_due = loan.first_payment_date  # "validade" actual
+
+        loan.current_cycle_start = cycle_start
+        loan.current_cycle_due = cycle_due
+
+        # 3) Principal na entrada deste ciclo
+        #    = principal original - principal pago antes do início do ciclo
+        agg_before = repayments.filter(payment_date__lt=cycle_start).aggregate(
+            total_before=Sum("principal_amount")
+        )
+        principal_paid_before_cycle = agg_before["total_before"] or Decimal("0")
+        cycle_base_principal = loan.principal_amount - principal_paid_before_cycle
+        if cycle_base_principal < 0:
+            cycle_base_principal = Decimal("0")
+
+        # 4) Juros do ciclo (fixos para este período de 30 dias)
         rate = loan.interest_type.rate if loan.interest_type and loan.interest_type.rate else Decimal("0")
         rate_decimal = (rate / Decimal("100")).quantize(Decimal("0.0001"))
 
-        # juros do período sobre o principal em dívida
-        interest_due = (outstanding_principal * rate_decimal).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        loan.period_interest_due = interest_due
-        loan.outstanding_with_interest = outstanding_principal + interest_due
+        cycle_interest_total = (cycle_base_principal * rate_decimal).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+        # 5) Juros já pagos neste ciclo
+        q_cycle = Q(payment_date__gte=cycle_start)
+        if cycle_due:
+            q_cycle &= Q(payment_date__lte=cycle_due)
+        agg_int = repayments.filter(q_cycle).aggregate(total_int=Sum("interest_amount"))
+        interest_paid_cycle = agg_int["total_int"] or Decimal("0")
+
+        # 6) Juros em falta neste ciclo
+        interest_remaining = cycle_interest_total - interest_paid_cycle
+        if interest_remaining < 0:
+            interest_remaining = Decimal("0")
+
+        loan.period_interest_total = cycle_interest_total
+        loan.period_interest_remaining = interest_remaining
+        loan.outstanding_with_interest = outstanding_principal + interest_remaining
 
         total_outstanding_all += loan.outstanding_with_interest
 
-        # último pagamento
-        last_rep = loan.repayments.order_by("-payment_date", "-id").first()
+        # 7) Último pagamento (para info)
+        last_rep = repayments.order_by("-payment_date", "-id").first()
         loan.last_repayment = last_rep
 
     context = {
         "loans": loans,
         "kpi_total_loans": total_loans,
         "kpi_total_principal": total_principal_all,
-        "kpi_total_outstanding": total_outstanding_all,  # já inclui juros
+        "kpi_total_outstanding": total_outstanding_all,
         "kpi_avg_outstanding": (total_outstanding_all / total_loans) if total_loans else Decimal("0"),
         "company_accounts": CompanyAccount.objects.filter(is_active=True).order_by("name"),
+        "today": today,
     }
     return render(request, "payments/loan_repayment_list.html", context)
 
@@ -87,9 +125,10 @@ def loan_repayment_list(request):
 def register_repayment(request, loan_id):
     """
     Regista um reembolso de empréstimo com 3 opções:
-    - interest_only: paga apenas juros do período (principal mantém-se igual)
-    - full: paga juros + 100% do principal (fecha o empréstimo)
-    - partial: paga juros + parte do principal (reduz saldo do principal)
+    - interest_only: paga apenas juros em falta deste ciclo (principal mantém-se);
+                     renova a validade (novo ciclo de 30 dias).
+    - full: paga juros em falta + 100% do principal em dívida (fecha o empréstimo).
+    - partial: paga juros em falta + parte do principal (reduz saldo do principal).
     Em todos os casos:
     - cria LoanRepayment
     - actualiza saldo da conta da empresa (entrada)
@@ -102,7 +141,7 @@ def register_repayment(request, loan_id):
         status="disbursed",
     )
 
-    repayment_type = request.POST.get("repayment_type", "partial").strip()  # default = parcial
+    repayment_type = request.POST.get("repayment_type", "partial").strip()  # interest_only / full / partial
 
     company_account_id = request.POST.get("company_account", "").strip()
     payment_date_str = request.POST.get("payment_date", "").strip()
@@ -111,7 +150,7 @@ def register_repayment(request, loan_id):
     notes = request.POST.get("notes", "").strip()
     attachment = request.FILES.get("attachment")
 
-    # Conta da empresa (entrada)
+    # Conta da empresa
     if not company_account_id:
         return JsonResponse(
             {"success": False, "message": "Selecione a conta da empresa que recebe o pagamento."},
@@ -155,25 +194,54 @@ def register_repayment(request, loan_id):
             status=400,
         )
 
-    # Calcular principal em dívida
-    agg = loan.repayments.aggregate(total_principal=Sum("principal_amount"))
-    principal_paid = agg["total_principal"] or Decimal("0")
-    outstanding_principal = loan.principal_amount - principal_paid
+    # ===== 1) PRINCIPAL EM DÍVIDA GLOBAL =====
+    repayments = loan.repayments.all()
+
+    agg_tot = repayments.aggregate(total_principal=Sum("principal_amount"))
+    principal_paid_total = agg_tot["total_principal"] or Decimal("0")
+    outstanding_principal = loan.principal_amount - principal_paid_total
     if outstanding_principal <= 0:
         return JsonResponse(
             {"success": False, "message": "Este empréstimo não tem saldo de principal em dívida."},
             status=400,
         )
 
-    # taxa de juros do período (ex: 30.0000 => 30%)
+    # ===== 2) CICLO ACTUAL =====
+    cycle_start = loan.release_date or loan.created_at.date()
+    cycle_due = loan.first_payment_date
+
+    # principal pago antes do ciclo
+    agg_before = repayments.filter(payment_date__lt=cycle_start).aggregate(
+        total_before=Sum("principal_amount")
+    )
+    principal_paid_before_cycle = agg_before["total_before"] or Decimal("0")
+    cycle_base_principal = loan.principal_amount - principal_paid_before_cycle
+    if cycle_base_principal < 0:
+        cycle_base_principal = Decimal("0")
+
+    # taxa
     rate = loan.interest_type.rate if loan.interest_type and loan.interest_type.rate else Decimal("0")
     rate_decimal = (rate / Decimal("100")).quantize(Decimal("0.0001"))
 
-    # juros do período com base no principal em dívida
-    interest_due = (outstanding_principal * rate_decimal).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    max_total = outstanding_principal + interest_due  # total para liquidar tudo neste ciclo
+    # juros totais deste ciclo
+    cycle_interest_total = (cycle_base_principal * rate_decimal).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
 
-    # Definir juros/principal de acordo com o tipo de pagamento
+    # juros já pagos neste ciclo
+    q_cycle = Q(payment_date__gte=cycle_start)
+    if cycle_due:
+        q_cycle &= Q(payment_date__lte=cycle_due)
+
+    agg_int = repayments.filter(q_cycle).aggregate(total_int=Sum("interest_amount"))
+    interest_paid_cycle = agg_int["total_int"] or Decimal("0")
+
+    # juros em falta neste ciclo
+    interest_remaining = cycle_interest_total - interest_paid_cycle
+    if interest_remaining < 0:
+        interest_remaining = Decimal("0")
+
+    # ===== 3) VALIDAR E DISTRIBUIR O PAGAMENTO =====
     repayment_type_label = ""
     interest_amount = Decimal("0.00")
     principal_amount = Decimal("0.00")
@@ -181,70 +249,81 @@ def register_repayment(request, loan_id):
 
     if repayment_type == "interest_only":
         repayment_type_label = "Pagamento apenas de juros"
-        # neste caso queremos que o utilizador pague exactamente os juros do período
-        if amount != interest_due:
+
+        if interest_remaining <= 0:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Não há juros em falta neste ciclo. Não é possível liquidar apenas juros.",
+                },
+                status=400,
+            )
+
+        # tem de pagar exactamente os juros em falta
+        if amount != interest_remaining:
             return JsonResponse(
                 {
                     "success": False,
                     "message": (
-                        f"Para liquidar apenas os juros deste período o valor deve ser exactamente "
-                        f"{interest_due}. Introduziu {amount}."
+                        f"Para liquidar apenas os juros deste ciclo o valor deve ser exactamente "
+                        f"{interest_remaining}. Introduziu {amount}."
                     ),
                 },
                 status=400,
             )
-        interest_amount = interest_due
+
+        interest_amount = interest_remaining
         principal_amount = Decimal("0.00")
-        principal_balance_after = outstanding_principal  # principal não muda
+        principal_balance_after = outstanding_principal  # não muda
 
     elif repayment_type == "full":
         repayment_type_label = "Liquidação total (juros + principal)"
-        if amount != max_total:
+
+        total_to_close = outstanding_principal + interest_remaining
+
+        if amount != total_to_close:
             return JsonResponse(
                 {
                     "success": False,
                     "message": (
-                        f"Para liquidar totalmente este empréstimo deve pagar exactamente {max_total} "
-                        f"(principal {outstanding_principal} + juros {interest_due}). "
+                        f"Para liquidar totalmente este empréstimo deve pagar exactamente "
+                        f"{total_to_close} (principal {outstanding_principal} + juros em falta {interest_remaining}). "
                         f"Introduziu {amount}."
                     ),
                 },
                 status=400,
             )
-        interest_amount = interest_due
+
+        interest_amount = interest_remaining
         principal_amount = outstanding_principal
         principal_balance_after = Decimal("0.00")
 
-    else:  # 'partial'
+    else:
+        # partial
         repayment_type = "partial"
         repayment_type_label = "Pagamento parcial (juros + principal)"
 
-        if amount > max_total:
+        if interest_remaining > 0 and amount < interest_remaining:
             return JsonResponse(
                 {
                     "success": False,
                     "message": (
-                        f"O valor introduzido ({amount}) é superior ao saldo em dívida deste ciclo "
-                        f"(principal {outstanding_principal} + juros {interest_due} = {max_total})."
+                        f"Para pagamento parcial neste ciclo deve pagar pelo menos os juros em falta "
+                        f"({interest_remaining}). Introduziu {amount}."
                     ),
                 },
                 status=400,
             )
 
-        # Primeiro liquida juros, resto vai para principal
-        if amount <= interest_due:
-            # na prática está a comportar-se como “quase só juros”
-            interest_amount = amount
-            principal_amount = Decimal("0.00")
-            principal_balance_after = outstanding_principal
-        else:
-            interest_amount = interest_due
-            principal_amount = amount - interest_amount
-            principal_balance_after = outstanding_principal - principal_amount
-            if principal_balance_after < 0:
-                principal_balance_after = Decimal("0.00")
+        # primeiro liquida juros em falta, resto vai para principal
+        interest_amount = min(amount, interest_remaining)
+        principal_amount = amount - interest_amount
 
-    # Criar LoanRepayment
+        principal_balance_after = outstanding_principal - principal_amount
+        if principal_balance_after < 0:
+            principal_balance_after = Decimal("0.00")
+
+    # ===== 4) CRIAR LOANREPAYMENT =====
     repayment = LoanRepayment.objects.create(
         loan=loan,
         member=loan.member,
@@ -259,13 +338,13 @@ def register_repayment(request, loan_id):
         notes=notes or None,
     )
 
-    # Actualizar saldo da conta da empresa (entrada)
+    # ===== 5) ACTUALIZAR SALDO DA CONTA DA EMPRESA =====
     old_balance = account.balance or Decimal("0")
     account.balance = old_balance + amount
     account.save(update_fields=["balance"])
     new_balance = account.balance
 
-    # Criar Transaction (entrada) – fica claro que é reembolso de empréstimo
+    # ===== 6) REGISTAR TRANSAÇÃO =====
     descricao = (
         f"{repayment_type_label} - Reembolso de empréstimo (Loan #{loan.id}) "
         f"de {loan.member.first_name} {loan.member.last_name} "
@@ -286,10 +365,20 @@ def register_repayment(request, loan_id):
         created_at=timezone.now(),
     )
 
-    # Se principal em dívida chegou a zero, fechar empréstimo
+    # ===== 7) ACTUALIZAR ESTADO / VALIDADE DO EMPRÉSTIMO =====
+
+    # Se principal acabou, fecha empréstimo
     if principal_balance_after <= 0:
         loan.status = "closed"
         loan.save(update_fields=["status"])
+
+    # Se foi "apenas juros": renova validade (novo ciclo de 30 dias)
+    elif repayment_type == "interest_only":
+        loan.release_date = payment_date
+        loan.first_payment_date = payment_date + timedelta(days=30)
+        loan.save(update_fields=["release_date", "first_payment_date"])
+
+    # Pagamento parcial: apenas reduz principal; ciclo continua igual
 
     return JsonResponse(
         {
