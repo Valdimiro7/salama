@@ -15,7 +15,7 @@ from core.views.loan.loan_views import pending_loans_list, confirm_loan
 from core.views.payments.loan_disbursement_views import loan_disbursement_list, register_disbursement
 from core.views.loan.active_loan import active_loans_list, active_loan_details
 from core.views.payments.loan_repayment_views import loan_repayment_list, register_repayment
-from core.views.loan.all_loan_list_views import loan_list_all
+from core.views.loan.all_loan_list_views import loan_list_all, loan_details_any_status
 
 
 
@@ -89,6 +89,7 @@ urlpatterns = [
      path("loans/active/<int:loan_id>/details/", active_loan_details, name="active_loan_details"),
      
      path("loans/all/", loan_list_all, name="loan_list_all"),
+     path("loans/<int:loan_id>/details/", loan_details_any_status, name="loan_details_any_status",),
 
 
     path("loans/disbursement/", loan_disbursement_list, name="loan_disbursement_list"),

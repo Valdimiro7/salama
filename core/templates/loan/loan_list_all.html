@@ -56,6 +56,11 @@
           background-color: #082939;
           color: #fff;
         }
+
+        /* cursor pointer nas linhas */
+        #all-loans-table tbody tr {
+          cursor: pointer;
+        }
       </style>
 
       <div class="card my-4">
@@ -208,7 +213,7 @@
                 </thead>
                 <tbody>
                   {% for loan in loans %}
-                    <tr>
+                    <tr data-loan-id="{{ loan.id }}">
                       <!-- ID -->
                       <td>{{ loan.id }}</td>
 
@@ -328,6 +333,94 @@
 
   {% include "includes/sl_footer.html" %}
 </div>
+
+<!-- MODAL DETALHES DO EMPRÉSTIMO -->
+<div class="modal fade" id="loanDetailsModal" tabindex="-1" aria-labelledby="loanDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="loanDetailsModalLabel">Detalhes do Empréstimo</h5>
+          <small class="text-muted" id="loanDetailsSubtitle"></small>
+        </div>
+        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs mb-3" id="loanDetailsTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab"
+                    data-bs-target="#overview-pane" type="button" role="tab">
+              Overview
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="member-tab" data-bs-toggle="tab"
+                    data-bs-target="#member-pane" type="button" role="tab">
+              Cliente & Contas
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="disbursement-tab" data-bs-toggle="tab"
+                    data-bs-target="#disbursement-pane" type="button" role="tab">
+              Desembolso
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="guarantors-tab" data-bs-toggle="tab"
+                    data-bs-target="#guarantors-pane" type="button" role="tab">
+              Fiadores
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="guarantees-tab" data-bs-toggle="tab"
+                    data-bs-target="#guarantees-pane" type="button" role="tab">
+              Garantias
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="overview-pane" role="tabpanel" aria-labelledby="overview-tab">
+            <div id="overview-content">
+              <p class="text-muted">A carregar detalhes do empréstimo...</p>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="member-pane" role="tabpanel" aria-labelledby="member-tab">
+            <div id="member-content">
+              <p class="text-muted">A carregar dados do cliente...</p>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="disbursement-pane" role="tabpanel" aria-labelledby="disbursement-tab">
+            <div id="disbursement-content">
+              <p class="text-muted">A carregar dados do desembolso...</p>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="guarantors-pane" role="tabpanel" aria-labelledby="guarantors-tab">
+            <div id="guarantors-content">
+              <p class="text-muted">A carregar fiadores...</p>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="guarantees-pane" role="tabpanel" aria-labelledby="guarantees-tab">
+            <div id="guarantees-content">
+              <p class="text-muted">A carregar garantias...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
 {% block extra_js %}
@@ -339,6 +432,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -380,6 +474,267 @@
           // procura exacto pelo código do status
           table.column(12).search('^' + status + '$', true, false).draw();
         }
+      });
+
+      // Clique em qualquer linha -> abrir modal com detalhes (mesmo esquema de Empréstimos Activos)
+      $('#all-loans-table tbody').on('click', 'tr', function () {
+        const loanId = $(this).data('loan-id');
+        if (!loanId) return;
+
+        // limpar conteúdos
+        $('#loanDetailsModalLabel').text('Detalhes do Empréstimo #' + loanId);
+        $('#loanDetailsSubtitle').text('');
+        $('#overview-content').html('<p class="text-muted">A carregar detalhes do empréstimo...</p>');
+        $('#member-content').html('<p class="text-muted">A carregar dados do cliente...</p>');
+        $('#disbursement-content').html('<p class="text-muted">A carregar dados do desembolso...</p>');
+        $('#guarantors-content').html('<p class="text-muted">A carregar fiadores...</p>');
+        $('#guarantees-content').html('<p class="text-muted">A carregar garantias...</p>');
+
+        const modalEl = document.getElementById('loanDetailsModal');
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+
+        // pedir detalhes via AJAX (mesmo endpoint que já tens para activos)
+        $.ajax({
+          url: "{% url 'core:loan_details_any_status' 0 %}".replace('/0/', '/' + loanId + '/'),
+          type: "GET",
+          success: function (data) {
+            if (!data || !data.loan) {
+              $('#overview-content').html('<p class="text-danger">Não foi possível carregar os detalhes.</p>');
+              return;
+            }
+
+            const loan = data.loan;
+            const member = data.member;
+            const disb = data.disbursement;
+            const clientAccounts = data.client_accounts || [];
+            const guarantors = data.guarantors || [];
+            const guarantees = data.guarantees || [];
+
+            // Subtitle
+            $('#loanDetailsSubtitle').text(
+              (member && member.name ? member.name : '') + ' · Empréstimo #' + loan.id
+            );
+
+            // Helpers safe (para evitar erros se for null)
+            const fmtMoney = (v) => (v != null ? v.toFixed(2) : '—');
+
+            // Overview
+            let overviewHtml = `
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="mb-2">Resumo do empréstimo</h6>
+                  <ul class="list-unstyled mb-3">
+                    <li><strong>Tipo:</strong> ${loan.loan_type || '—'}</li>
+                    <li><strong>Tipo de juro:</strong> ${loan.interest_type || '—'}</li>
+                    <li><strong>Principal:</strong> MT ${fmtMoney(loan.principal_amount)}</li>
+                    <li><strong>Juros:</strong> MT ${loan.total_interest != null ? fmtMoney(loan.total_interest) : '—'}</li>
+                    <li><strong>Total a reembolsar:</strong> MT ${loan.total_to_repay != null ? fmtMoney(loan.total_to_repay) : '—'}</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="mb-2">Termos</h6>
+                  <ul class="list-unstyled mb-3">
+                    <li><strong>Período:</strong> ${loan.term_periods || '—'} ${loan.period_type || ''}</li>
+                    <li><strong>Prestação por período:</strong> MT ${loan.payment_per_period != null ? fmtMoney(loan.payment_per_period) : '—'}</li>
+                    <li><strong>Data início:</strong> ${loan.release_date || '—'}</li>
+                    <li><strong>1ª prestação:</strong> ${loan.first_payment_date || '—'}</li>
+                    <li><strong>Método de desembolso:</strong> ${loan.disburse_method || '—'}</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-md-6">
+                  <h6 class="mb-2">Workflow</h6>
+                  <ul class="list-unstyled mb-0">
+                    <li><strong>Criado por:</strong> ${loan.created_by || '—'}</li>
+                    <li><strong>Aprovado por:</strong> ${loan.approved_by || '—'}</li>
+                    <li><strong>Criado em:</strong> ${loan.created_at || '—'}</li>
+                    <li><strong>Status actual:</strong> ${loan.status}</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="mb-2">Notas & Objectivo</h6>
+                  <p><strong>Objectivo:</strong><br>${loan.purpose || '—'}</p>
+                  <p><strong>Observações:</strong><br>${loan.remarks || '—'}</p>
+                </div>
+              </div>
+            `;
+            $('#overview-content').html(overviewHtml);
+
+            // Member & Contas
+            let memberHtml = `
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="mb-2">Dados do cliente</h6>
+                  <ul class="list-unstyled mb-3">
+                    <li><strong>Nome:</strong> ${(member && member.name) || '—'}</li>
+                    <li><strong>Telefone:</strong> ${(member && member.phone) || '—'}</li>
+                    <li><strong>Telefone alternativo:</strong> ${(member && member.alt_phone) || '—'}</li>
+                    <li><strong>Email:</strong> ${(member && member.email) || '—'}</li>
+                    <li><strong>Cidade:</strong> ${(member && member.city) || '—'}</li>
+                    <li><strong>Endereço:</strong> ${(member && member.address) || '—'}</li>
+                    <li><strong>Profissão:</strong> ${(member && member.profession) || '—'}</li>
+                    <li><strong>Gestor de conta:</strong> ${(member && member.manager) || '—'}</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="mb-2">Contas do cliente</h6>
+            `;
+
+            if (clientAccounts.length === 0) {
+              memberHtml += `<p class="text-muted">Nenhuma conta activa registada para este cliente.</p>`;
+            } else {
+              memberHtml += `
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Nome</th>
+                        <th>Número</th>
+                        <th>Saldo (MT)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
+              clientAccounts.forEach(function (ca) {
+                memberHtml += `
+                  <tr>
+                    <td>${ca.account_type || '—'}</td>
+                    <td>${ca.account_type_name || '—'}</td>
+                    <td>${ca.identifier || '—'}</td>
+                    <td>${ca.balance != null ? fmtMoney(ca.balance) : '—'}</td>
+                  </tr>
+                `;
+              });
+              memberHtml += `
+                    </tbody>
+                  </table>
+                </div>
+              `;
+            }
+
+            memberHtml += `
+                </div>
+              </div>
+            `;
+            $('#member-content').html(memberHtml);
+
+            // Desembolso
+            let disbHtml = `
+              <h6 class="mb-3">Dados do último desembolso</h6>
+            `;
+            if (!disb || !disb.exists) {
+              disbHtml += `<p class="text-muted">Nenhum desembolso registado.</p>`;
+            } else {
+              disbHtml += `
+                <ul class="list-unstyled mb-3">
+                  <li><strong>Valor desembolsado:</strong> MT ${disb.amount != null ? fmtMoney(disb.amount) : '—'}</li>
+                  <li><strong>Data:</strong> ${disb.date || '—'}</li>
+                  <li><strong>Método:</strong> ${disb.method || '—'}</li>
+                  <li><strong>Conta da empresa:</strong> ${disb.company_account || '—'}</li>
+                  <li><strong>Nº conta da empresa:</strong> ${disb.company_account_identifier || '—'}</li>
+                  <li><strong>Notas:</strong><br>${disb.notes || '—'}</li>
+                </ul>
+              `;
+              if (disb.attachment_url) {
+                disbHtml += `
+                  <p>
+                    <a href="${disb.attachment_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                      Ver comprovativo
+                    </a>
+                  </p>
+                `;
+              }
+            }
+            $('#disbursement-content').html(disbHtml);
+
+            // Fiadores
+            let guarantorsHtml = `<h6 class="mb-3">Fiadores</h6>`;
+            if (guarantors.length === 0) {
+              guarantorsHtml += `<p class="text-muted">Nenhum fiador registado para este empréstimo.</p>`;
+            } else {
+              guarantorsHtml += `
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Nº Conta / Ref.</th>
+                        <th>Montante (MT)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
+              guarantors.forEach(function (g) {
+                guarantorsHtml += `
+                  <tr>
+                    <td>${g.name || '—'}</td>
+                    <td>${g.phone || '—'}</td>
+                    <td>${g.account_number || '—'}</td>
+                    <td>${g.amount != null ? fmtMoney(g.amount) : '—'}</td>
+                  </tr>
+                `;
+              });
+              guarantorsHtml += `
+                    </tbody>
+                  </table>
+                </div>
+              `;
+            }
+            $('#guarantors-content').html(guarantorsHtml);
+
+            // Garantias
+            let guaranteesHtml = `<h6 class="mb-3">Garantias</h6>`;
+            if (guarantees.length === 0) {
+              guaranteesHtml += `<p class="text-muted">Nenhuma garantia registada para este empréstimo.</p>`;
+            } else {
+              guaranteesHtml += `
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Serial</th>
+                        <th>Preço estimado (MT)</th>
+                        <th>Descrição</th>
+                        <th>Anexo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
+              guarantees.forEach(function (gg) {
+                guaranteesHtml += `
+                  <tr>
+                    <td>${gg.name || '—'}</td>
+                    <td>${gg.guarantee_type || '—'}</td>
+                    <td>${gg.serial_number || '—'}</td>
+                    <td>${gg.estimated_price != null ? fmtMoney(gg.estimated_price) : '—'}</td>
+                    <td>${gg.description || '—'}</td>
+                    <td>
+                      ${gg.attachment_url
+                        ? `<a href="${gg.attachment_url}" target="_blank" class="btn btn-xs btn-outline-primary">Ver</a>`
+                        : '—'}
+                    </td>
+                  </tr>
+                `;
+              });
+              guaranteesHtml += `
+                    </tbody>
+                  </table>
+                </div>
+              `;
+            }
+            $('#guarantees-content').html(guaranteesHtml);
+
+          },
+          error: function () {
+            $('#overview-content').html('<p class="text-danger">Erro ao carregar detalhes do empréstimo.</p>');
+          }
+        });
       });
     });
   </script>
