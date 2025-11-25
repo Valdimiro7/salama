@@ -86,12 +86,14 @@ def loan_repayment_list(request):
 @db_transaction.atomic
 def register_repayment(request, loan_id):
     """
-    Regista um reembolso de empréstimo seguindo a regra:
-    - juros do período = (rate do InterestType / 100) * principal em dívida
-    - pagamento cobre primeiro juros, depois amortiza principal
+    Regista um reembolso de empréstimo com 3 opções:
+    - interest_only: paga apenas juros do período (principal mantém-se igual)
+    - full: paga juros + 100% do principal (fecha o empréstimo)
+    - partial: paga juros + parte do principal (reduz saldo do principal)
+    Em todos os casos:
+    - cria LoanRepayment
     - actualiza saldo da conta da empresa (entrada)
     - cria Transaction (IN, source_type='loan_repayment')
-    - se principal em dívida chegar a 0, fecha o empréstimo (status='closed')
     """
 
     loan = get_object_or_404(
@@ -99,6 +101,8 @@ def register_repayment(request, loan_id):
         pk=loan_id,
         status="disbursed",
     )
+
+    repayment_type = request.POST.get("repayment_type", "partial").strip()  # default = parcial
 
     company_account_id = request.POST.get("company_account", "").strip()
     payment_date_str = request.POST.get("payment_date", "").strip()
@@ -157,41 +161,88 @@ def register_repayment(request, loan_id):
     outstanding_principal = loan.principal_amount - principal_paid
     if outstanding_principal <= 0:
         return JsonResponse(
-            {"success": False, "message": "Este empréstimo não tem saldo em dívida."},
+            {"success": False, "message": "Este empréstimo não tem saldo de principal em dívida."},
             status=400,
         )
 
-    # taxa de juros do período (ex: 3.0000 => 3%)
+    # taxa de juros do período (ex: 30.0000 => 30%)
     rate = loan.interest_type.rate if loan.interest_type and loan.interest_type.rate else Decimal("0")
     rate_decimal = (rate / Decimal("100")).quantize(Decimal("0.0001"))
 
     # juros do período com base no principal em dívida
     interest_due = (outstanding_principal * rate_decimal).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    max_total = outstanding_principal + interest_due  # “saldo em dívida” deste ciclo
+    max_total = outstanding_principal + interest_due  # total para liquidar tudo neste ciclo
 
-    if amount > max_total:
-        return JsonResponse(
-            {
-                "success": False,
-                "message": (
-                    f"O valor introduzido ({amount}) é superior ao saldo em dívida deste ciclo "
-                    f"(principal {outstanding_principal} + juros {interest_due} = {max_total})."
-                ),
-            },
-            status=400,
-        )
+    # Definir juros/principal de acordo com o tipo de pagamento
+    repayment_type_label = ""
+    interest_amount = Decimal("0.00")
+    principal_amount = Decimal("0.00")
+    principal_balance_after = outstanding_principal
 
-    # Composição do pagamento: primeiro juros, depois principal
-    if amount <= interest_due:
-        interest_amount = amount
-        principal_amount = Decimal("0.00")
-    else:
+    if repayment_type == "interest_only":
+        repayment_type_label = "Pagamento apenas de juros"
+        # neste caso queremos que o utilizador pague exactamente os juros do período
+        if amount != interest_due:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        f"Para liquidar apenas os juros deste período o valor deve ser exactamente "
+                        f"{interest_due}. Introduziu {amount}."
+                    ),
+                },
+                status=400,
+            )
         interest_amount = interest_due
-        principal_amount = amount - interest_amount
+        principal_amount = Decimal("0.00")
+        principal_balance_after = outstanding_principal  # principal não muda
 
-    principal_balance_after = outstanding_principal - principal_amount
-    if principal_balance_after < 0:
+    elif repayment_type == "full":
+        repayment_type_label = "Liquidação total (juros + principal)"
+        if amount != max_total:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        f"Para liquidar totalmente este empréstimo deve pagar exactamente {max_total} "
+                        f"(principal {outstanding_principal} + juros {interest_due}). "
+                        f"Introduziu {amount}."
+                    ),
+                },
+                status=400,
+            )
+        interest_amount = interest_due
+        principal_amount = outstanding_principal
         principal_balance_after = Decimal("0.00")
+
+    else:  # 'partial'
+        repayment_type = "partial"
+        repayment_type_label = "Pagamento parcial (juros + principal)"
+
+        if amount > max_total:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        f"O valor introduzido ({amount}) é superior ao saldo em dívida deste ciclo "
+                        f"(principal {outstanding_principal} + juros {interest_due} = {max_total})."
+                    ),
+                },
+                status=400,
+            )
+
+        # Primeiro liquida juros, resto vai para principal
+        if amount <= interest_due:
+            # na prática está a comportar-se como “quase só juros”
+            interest_amount = amount
+            principal_amount = Decimal("0.00")
+            principal_balance_after = outstanding_principal
+        else:
+            interest_amount = interest_due
+            principal_amount = amount - interest_amount
+            principal_balance_after = outstanding_principal - principal_amount
+            if principal_balance_after < 0:
+                principal_balance_after = Decimal("0.00")
 
     # Criar LoanRepayment
     repayment = LoanRepayment.objects.create(
@@ -214,9 +265,9 @@ def register_repayment(request, loan_id):
     account.save(update_fields=["balance"])
     new_balance = account.balance
 
-    # Criar Transaction (entrada)
+    # Criar Transaction (entrada) – fica claro que é reembolso de empréstimo
     descricao = (
-        f"Reembolso de empréstimo (Loan #{loan.id}) "
+        f"{repayment_type_label} - Reembolso de empréstimo (Loan #{loan.id}) "
         f"de {loan.member.first_name} {loan.member.last_name} "
         f"- Juros: {interest_amount} · Principal: {principal_amount}"
     )
@@ -244,9 +295,9 @@ def register_repayment(request, loan_id):
         {
             "success": True,
             "message": (
-                "Pagamento registado com sucesso. "
+                f"{repayment_type_label} registado com sucesso. "
                 f"Juros pagos: {interest_amount}, principal amortizado: {principal_amount}, "
-                f"saldo em dívida (principal) após pagamento: {principal_balance_after}."
+                f"saldo de principal em dívida após pagamento: {principal_balance_after}."
             ),
         }
     )
