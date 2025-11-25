@@ -1,6 +1,6 @@
 from decimal import Decimal
 from datetime import datetime
-
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db import transaction as db_transaction
 from django.http import JsonResponse
@@ -16,11 +16,11 @@ from core.models import (
 
 #============================================================================================================
 #============================================================================================================
-
 @login_required
 def loan_disbursement_list(request):
     """
     Lista empréstimos aprovados (status='approved') e respectivos desembolsos (se existirem).
+    Apenas empréstimos aprovados aparecem aqui para poderem ser desembolsados.
     """
     loans = (
         Loan.objects
@@ -44,14 +44,20 @@ def loan_disbursement_list(request):
 @db_transaction.atomic
 def register_disbursement(request, loan_id):
     """
-    Regista o desembolso:
+    Regista o desembolso de um empréstimo:
+    - verifica saldo disponível na conta da empresa
     - cria LoanDisbursement
     - cria Transaction (saída)
     - actualiza saldo da conta da empresa
-    - muda Loan.status para 'active'
+    - muda Loan.status para 'disbursed'
     """
-    loan = get_object_or_404(Loan.objects.select_related("member"), pk=loan_id)
+    # Buscar o empréstimo
+    loan = get_object_or_404(
+        Loan.objects.select_related("member"),
+        pk=loan_id
+    )
 
+    # Apenas empréstimos aprovados podem ser desembolsados
     if loan.status != "approved":
         return JsonResponse(
             {"success": False, "message": "Apenas empréstimos aprovados podem ser desembolsados."},
@@ -65,6 +71,7 @@ def register_disbursement(request, loan_id):
             status=400,
         )
 
+    # Ler dados do POST
     company_account_id = request.POST.get("company_account", "").strip()
     disburse_date_str = request.POST.get("disburse_date", "").strip()
     amount_raw = request.POST.get("amount", "").strip()
@@ -72,7 +79,7 @@ def register_disbursement(request, loan_id):
     notes = request.POST.get("notes", "").strip()
     attachment = request.FILES.get("attachment")
 
-    # Validar conta
+    # === Validar conta da empresa ===
     if not company_account_id:
         return JsonResponse(
             {"success": False, "message": "Selecione a conta da empresa para o desembolso."},
@@ -81,27 +88,58 @@ def register_disbursement(request, loan_id):
     try:
         account = CompanyAccount.objects.get(pk=company_account_id, is_active=True)
     except CompanyAccount.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Conta da empresa inválida."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Conta da empresa inválida."},
+            status=400,
+        )
 
-    # Data
+    # === Validar data do desembolso ===
     if not disburse_date_str:
-        return JsonResponse({"success": False, "message": "Informe a data de desembolso."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Informe a data de desembolso."},
+            status=400,
+        )
     try:
         disburse_date = datetime.strptime(disburse_date_str, "%Y-%m-%d").date()
     except ValueError:
-        return JsonResponse({"success": False, "message": "Data de desembolso inválida."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Data de desembolso inválida."},
+            status=400,
+        )
 
-    # Montante
+    # === Validar valor ===
     if not amount_raw:
-        return JsonResponse({"success": False, "message": "Informe o valor de desembolso."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Informe o valor de desembolso."},
+            status=400,
+        )
     try:
         amount = Decimal(str(amount_raw))
         if amount <= 0:
             raise ValueError
     except Exception:
-        return JsonResponse({"success": False, "message": "Valor de desembolso inválido."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Valor de desembolso inválido."},
+            status=400,
+        )
 
-    # Criar desembolso
+    # === Verificar saldo disponível antes de criar qualquer coisa ===
+    current_balance = account.balance or Decimal("0")
+
+    if amount > current_balance:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    "Saldo insuficiente na conta seleccionada para efectuar este desembolso. "
+                    "Por favor registe primeiro uma entrada de saldo (depósito/crédito) "
+                    "na conta da empresa antes de desembolsar."
+                ),
+            },
+            status=400,
+        )
+
+    # === Criar registo de desembolso ===
     disb = LoanDisbursement.objects.create(
         loan=loan,
         member=loan.member,
@@ -113,25 +151,32 @@ def register_disbursement(request, loan_id):
         notes=notes or None,
     )
 
-    # Actualizar saldo da conta (saída)
-    old_balance = account.balance or Decimal("0")
+    # === Actualizar saldo da conta (saída) ===
+    old_balance = current_balance
     account.balance = old_balance - amount
     account.save(update_fields=["balance"])
+    new_balance = account.balance
 
-    # Criar transacção (saída)
+    # === Criar transacção respeitando o modelo Transaction ===
     Transaction.objects.create(
-        trans_date=disburse_date,
         company_account=account,
-        member=loan.member,
+        tx_type=Transaction.TX_TYPE_OUT,          # "OUT" (saída)
+        source_type="loan_disbursement",          # ORIGEM: Desembolso de Empréstimo
+        source_id=disb.id,                        # referência ao desembolso
+        tx_date=disburse_date,
+        description=(
+            f"Desembolso de empréstimo (Loan #{loan.id}) "
+            f"para {loan.member.first_name} {loan.member.last_name}"
+        ),
         amount=amount,
-        direction="out",      # saída
-        source="loan_disbursement",
-        reference=f"Loan #{loan.id}",
-        description=f"Desembolso de empréstimo para {loan.member.first_name} {loan.member.last_name}",
+        balance_before=old_balance,
+        balance_after=new_balance,
+        is_active=True,
+        created_at=timezone.now(),
     )
 
-    # Mudar empréstimo para activo
-    loan.status = "active"
+    # === Actualizar status do empréstimo ===
+    loan.status = "disbursed"
     loan.save(update_fields=["status"])
 
     return JsonResponse(

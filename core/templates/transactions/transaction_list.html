@@ -19,7 +19,8 @@
               <div>
                 <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
                 <p class="text-sm text-muted mb-0">
-                  Entradas e saídas de dinheiro registadas automaticamente a partir de Despesas, Rendimentos e ajustes manuais.
+                  Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas,
+                  Desembolsos de Empréstimos e ajustes manuais.
                 </p>
               </div>
               <!-- futuro: botão Nova Transacção manual -->
@@ -63,6 +64,8 @@
                         Despesa
                       {% elif t.source_type == "manual" %}
                         Manual
+                      {% elif t.source_type == "loan_disbursement" %}
+                        Desembolso de Empréstimo
                       {% else %}
                         —
                       {% endif %}
@@ -89,9 +92,6 @@
 {% endblock content %}
 
 {% block extra_js %}
-  <!-- DataTables core -->
-
-
   <!-- DataTables Buttons -->
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
@@ -112,11 +112,11 @@
         },
         dom: 'lBfrtip',
         buttons: [
-          { extend: 'copy',  text: 'Copiar', className: 'btn btn-sm btn-outline-secondary' },
-          { extend: 'csv',   text: 'CSV',    className: 'btn btn-sm btn-outline-primary' },
-          { extend: 'excel', text: 'Excel',  className: 'btn btn-sm btn-outline-success' },
-          { extend: 'pdf',   text: 'PDF',    className: 'btn btn-sm btn-outline-danger' },
-          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+          { extend: 'copy',  text: 'Copiar',     className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',        className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',      className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',        className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir',   className: 'btn btn-sm btn-outline-dark' }
         ]
       });
     });
