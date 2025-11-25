@@ -6,6 +6,26 @@
   <div class="row">
     <div class="col-12 col-xl-11 mx-auto">
 
+      <style>
+        .due-pill {
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 999px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #fff;
+        }
+        .due-ok {
+          background-color: #2e7d32; /* verde */
+        }
+        .due-soon {
+          background-color: #f57c00; /* laranja */
+        }
+        .due-overdue {
+          background-color: #c62828; /* vermelho */
+        }
+      </style>
+
       <div class="card my-4">
         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
           <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
@@ -91,7 +111,8 @@
                   {% for loan in loans %}
                     <tr class="clickable-row"
                         style="cursor:pointer;"
-                        data-loan-id="{{ loan.id }}">
+                        data-loan-id="{{ loan.id }}"
+                        data-first-payment="{{ loan.first_payment_date|date:'Y-m-d' }}">
                       <!-- ID -->
                       <td>{{ loan.id }}</td>
 
@@ -150,7 +171,7 @@
                       </td>
 
                       <!-- 1ª Prestação -->
-                      <td>
+                      <td class="first-payment-cell">
                         {% if loan.first_payment_date %}
                           {{ loan.first_payment_date }}
                         {% else %}
@@ -329,6 +350,53 @@
           url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
         }
       });
+
+      // === COLORIR COLUNA "1ª Prestação" ===
+      (function colorirPrimeiraPrestacao() {
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+
+        $('#active-loans-table tbody tr').each(function () {
+          const tr = $(this);
+          const dueStr = tr.data('first-payment'); // YYYY-MM-DD
+
+          if (!dueStr) return;
+
+          const parts = dueStr.split('-');
+          if (parts.length !== 3) return;
+
+          const dueDate = new Date(
+            parseInt(parts[0], 10),
+            parseInt(parts[1], 10) - 1,
+            parseInt(parts[2], 10)
+          );
+          dueDate.setHours(0,0,0,0);
+
+          const diffMs = dueDate - hoje;
+          const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+          const td = tr.find('td.first-payment-cell');
+          const originalText = td.text().trim();
+
+          let cls = 'due-ok';
+          let label = originalText;
+
+          if (diffDays < 0) {
+            // já passou
+            cls = 'due-overdue';
+          } else if (diffDays <= 5) {
+            // até 5 dias para vencer
+            cls = 'due-soon';
+          } else {
+            // normal
+            cls = 'due-ok';
+          }
+
+          if (originalText !== '—' && originalText !== '') {
+            td.html(`<span class="due-pill ${cls}">${label}</span>`);
+          }
+        });
+      })();
 
       // clique em qualquer linha -> abrir modal com detalhes
       $('#active-loans-table tbody').on('click', 'tr', function () {
