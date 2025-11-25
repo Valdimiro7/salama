@@ -1,0 +1,386 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-11 mx-auto">
+
+      <style>
+        .kpi-card-slim {
+          border-radius: 0.75rem;
+          border: none;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .kpi-label {
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+          color: #9e9e9e;
+        }
+        .kpi-value-lg {
+          font-size: 1.4rem;
+          font-weight: 700;
+        }
+        .status-pill {
+          border-radius: 999px;
+          padding: 4px 10px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+        .status-pending {
+          background-color: #fff3cd;
+          color: #856404;
+        }
+        .status-approved {
+          background-color: #e3f2fd;
+          color: #0d47a1;
+        }
+        .status-disbursed {
+          background-color: #e8f5e9;
+          color: #1b5e20;
+        }
+        .status-closed {
+          background-color: #eceff1;
+          color: #37474f;
+        }
+        .status-cancelled {
+          background-color: #ffebee;
+          color: #b71c1c;
+        }
+
+        .loan-filter-pills .btn {
+          border-radius: 999px !important;
+        }
+        .loan-filter-pills .btn.active {
+          background-color: #082939;
+          color: #fff;
+        }
+      </style>
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Carteira de Empréstimos · Visão Global</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+
+            <!-- KPI CARDS -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-3 col-sm-6">
+                <div class="card kpi-card-slim h-100">
+                  <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="kpi-label mb-1">Total de empréstimos</div>
+                        <div class="kpi-value-lg">{{ kpi_total_loans }}</div>
+                      </div>
+                      <span class="material-symbols-rounded text-secondary">
+                        account_balance
+                      </span>
+                    </div>
+                    <div class="mt-2 text-xs text-muted">
+                      Inclui pendentes, aprovados, desembolsados, fechados e cancelados.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="card kpi-card-slim h-100">
+                  <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="kpi-label mb-1">Principal total (MT)</div>
+                        <div class="kpi-value-lg">
+                          {{ kpi_total_principal|floatformat:2 }}
+                        </div>
+                      </div>
+                      <span class="material-symbols-rounded text-success">
+                        payments
+                      </span>
+                    </div>
+                    <div class="mt-2 text-xs text-muted">
+                      Soma de todos os montantes concedidos.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="card kpi-card-slim h-100">
+                  <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="kpi-label mb-1">Total a reembolsar (MT)</div>
+                        <div class="kpi-value-lg">
+                          {{ kpi_total_to_repay|floatformat:2 }}
+                        </div>
+                      </div>
+                      <span class="material-symbols-rounded text-warning">
+                        trending_up
+                      </span>
+                    </div>
+                    <div class="mt-2 text-xs text-muted">
+                      Principal + juros de todos os contratos.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="card kpi-card-slim h-100">
+                  <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="kpi-label mb-1">Juros totais (MT)</div>
+                        <div class="kpi-value-lg">
+                          {{ kpi_total_interest|floatformat:2 }}
+                        </div>
+                      </div>
+                      <span class="material-symbols-rounded text-danger">
+                        percent
+                      </span>
+                    </div>
+                    <div class="mt-2 text-xs text-muted">
+                      Juros estimados a receber em toda a carteira.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FILTER PILLS -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+              <div>
+                <h6 class="mb-0">Lista de todos os empréstimos</h6>
+                <p class="text-sm text-muted mb-0">
+                  Use os filtros rápidos para ver apenas pendentes, aprovados, desembolsados, fechados ou cancelados.
+                </p>
+              </div>
+              <div class="loan-filter-pills btn-group btn-group-sm" role="group" aria-label="Filtro de status">
+                <button type="button" class="btn btn-outline-secondary loan-status-filter active" data-status="all">
+                  Todos ({{ kpi_total_loans }})
+                </button>
+                <button type="button" class="btn btn-outline-secondary loan-status-filter" data-status="pending">
+                  Pendentes ({{ kpi_status_pending }})
+                </button>
+                <button type="button" class="btn btn-outline-secondary loan-status-filter" data-status="approved">
+                  Aprovados ({{ kpi_status_approved }})
+                </button>
+                <button type="button" class="btn btn-outline-secondary loan-status-filter" data-status="disbursed">
+                  Desembolsados ({{ kpi_status_disbursed }})
+                </button>
+                <button type="button" class="btn btn-outline-secondary loan-status-filter" data-status="closed">
+                  Fechados ({{ kpi_status_closed }})
+                </button>
+                <button type="button" class="btn btn-outline-secondary loan-status-filter" data-status="cancelled">
+                  Cancelados ({{ kpi_status_cancelled }})
+                </button>
+              </div>
+            </div>
+
+            <!-- TABELA -->
+            <div class="table-responsive">
+              <table id="all-loans-table"
+                     class="table table-bordered table-striped align-items-center mb-0"
+                     style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Data Criação</th>
+                    <th>Membro</th>
+                    <th>Tipo</th>
+                    <th>Principal (MT)</th>
+                    <th>Total a Reembolsar (MT)</th>
+                    <th>Status</th>
+                    <th>Prazo</th>
+                    <th>Data Início</th>
+                    <th>1ª Prestação</th>
+                    <th>Aprovado por</th>
+                    <th>Data Desembolso</th>
+                    <!-- Coluna oculta com o código do status -->
+                    <th>StatusCode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for loan in loans %}
+                    <tr>
+                      <!-- ID -->
+                      <td>{{ loan.id }}</td>
+
+                      <!-- Data criação -->
+                      <td>{{ loan.created_at }}</td>
+
+                      <!-- Membro -->
+                      <td>
+                        {{ loan.member.first_name }} {{ loan.member.last_name }}
+                        <br>
+                        <small class="text-muted">
+                          {{ loan.member.phone }}{% if loan.member.city %} · {{ loan.member.city }}{% endif %}
+                        </small>
+                      </td>
+
+                      <!-- Tipo de empréstimo -->
+                      <td>{{ loan.loan_type.name|default:"—" }}</td>
+
+                      <!-- Principal -->
+                      <td>{{ loan.principal_amount|floatformat:2 }}</td>
+
+                      <!-- Total a Reembolsar -->
+                      <td>
+                        {% if loan.total_to_repay %}
+                          {{ loan.total_to_repay|floatformat:2 }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Status (bonito) -->
+                      <td>
+                        {% if loan.status == "pending" %}
+                          <span class="status-pill status-pending">Pendente</span>
+                        {% elif loan.status == "approved" %}
+                          <span class="status-pill status-approved">Aprovado</span>
+                        {% elif loan.status == "disbursed" %}
+                          <span class="status-pill status-disbursed">Desembolsado</span>
+                        {% elif loan.status == "closed" %}
+                          <span class="status-pill status-closed">Fechado</span>
+                        {% elif loan.status == "cancelled" %}
+                          <span class="status-pill status-cancelled">Cancelado</span>
+                        {% else %}
+                          <span class="badge bg-secondary">—</span>
+                        {% endif %}
+                      </td>
+
+                      <!-- Prazo -->
+                      <td>
+                        {{ loan.term_periods }}
+                        {% if loan.period_type == "monthly" %}
+                          meses
+                        {% elif loan.period_type == "daily" %}
+                          dias
+                        {% else %}
+                          períodos
+                        {% endif %}
+                      </td>
+
+                      <!-- Data Início -->
+                      <td>
+                        {% if loan.release_date %}
+                          {{ loan.release_date }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- 1ª Prestação -->
+                      <td>
+                        {% if loan.first_payment_date %}
+                          {{ loan.first_payment_date }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Aprovado por -->
+                      <td>
+                        {% if loan.approved_by %}
+                          {{ loan.approved_by.get_full_name|default:loan.approved_by.username }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Data Desembolso -->
+                      <td>
+                        {% if loan.disbursed_date %}
+                          {{ loan.disbursed_date }}
+                          <br>
+                          {% if loan.disbursed_amount %}
+                            <small class="text-muted">
+                              MT {{ loan.disbursed_amount|floatformat:2 }}
+                            </small>
+                          {% endif %}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- StatusCode (oculto, para filtragem) -->
+                      <td>{{ loan.status }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const table = $('#all-loans-table').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[1, 'desc'], [0, 'desc']],  // ordena por data criação e depois ID
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        },
+        // esconder a coluna StatusCode (última)
+        columnDefs: [
+          {
+            targets: 12,    // índice da coluna StatusCode
+            visible: false,
+            searchable: true
+          }
+        ]
+      });
+
+      // Filtro pelos pills
+      $('.loan-status-filter').on('click', function () {
+        const status = $(this).data('status'); // all / pending / approved / ...
+
+        $('.loan-status-filter').removeClass('active');
+        $(this).addClass('active');
+
+        if (status === 'all') {
+          table.column(12).search('').draw();
+        } else {
+          // procura exacto pelo código do status
+          table.column(12).search('^' + status + '$', true, false).draw();
+        }
+      });
+    });
+  </script>
+{% endblock extra_js %}
