@@ -68,6 +68,15 @@ class Loan(models.Model):
         null=True,
         blank=True,
     )
+    
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="approved_loans",
+        null=True,
+        blank=True,
+    )
+
 
     class Meta:
         managed = False

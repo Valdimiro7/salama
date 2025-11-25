@@ -32,25 +32,82 @@
                     <th>Membro</th>
                     <th>Tipo</th>
                     <th>Valor Empréstimo (MT)</th>
+                    <th>Valor Juros (MT)</th>
+                    <th>Total a Reembolsar (MT)</th>
+                    <th>Nome da conta a creditar</th>
+                    <th>Número da conta a creditar</th>
+                    <th>Requisitado por</th>
                     <th>Status</th>
-                    <th>Último Desembolso</th>
-                    <th>Conta</th>
-                    <th>Anexo</th>
                     <th style="width: 160px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for loan in loans %}
-                    {% with last_disb=loan.disbursements.last %}
                     <tr data-loan-id="{{ loan.id }}"
-                        data-principal="{{ loan.principal_amount|floatformat:2 }}">
+                        data-principal="{{ loan.principal_amount|floatformat:2 }}"
+                        data-client-account-name="{{ loan.client_account_name_to_credit|default_if_none:'' }}"
+                        data-client-account-number="{{ loan.client_account_identifier_to_credit|default_if_none:'' }}">
+                      <!-- ID -->
                       <td>{{ loan.id }}</td>
+
+                      <!-- Membro -->
                       <td>
                         {{ loan.member.first_name }} {{ loan.member.last_name }}
                         <br><small class="text-muted">{{ loan.member.phone }}</small>
                       </td>
+
+                      <!-- Tipo de empréstimo -->
                       <td>{{ loan.loan_type.name|default:"—" }}</td>
+
+                      <!-- Valor do empréstimo -->
                       <td>{{ loan.principal_amount|floatformat:2 }}</td>
+
+                      <!-- Valor de Juros (MT) -->
+                      <td>
+                        {% if loan.total_interest %}
+                          {{ loan.total_interest|floatformat:2 }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Total a Reembolsar (MT) -->
+                      <td>
+                        {% if loan.total_to_repay %}
+                          {{ loan.total_to_repay|floatformat:2 }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Nome da conta a creditar -->
+                      <td>
+                        {% if loan.client_account_name_to_credit %}
+                          {{ loan.client_account_name_to_credit }}
+                        {% else %}
+                          <span class="text-muted">Nenhuma conta registada</span>
+                        {% endif %}
+                      </td>
+
+                      <!-- Número da conta a creditar -->
+                      <td>
+                        {% if loan.client_account_identifier_to_credit %}
+                          {{ loan.client_account_identifier_to_credit }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Requisitado por (quem aprovou o empréstimo) -->
+                      <td>
+                        {% if loan.approved_by %}
+                          {{ loan.approved_by.get_full_name|default:loan.approved_by.username }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Status -->
                       <td>
                         {% if loan.disbursements.exists %}
                           <span class="badge bg-success text-white">Desembolsado</span>
@@ -58,31 +115,8 @@
                           <span class="badge bg-warning text-dark">Aguardando desembolso</span>
                         {% endif %}
                       </td>
-                      <td>
-                        {% if last_disb %}
-                          {{ last_disb.disburse_date }}<br>
-                          <small class="text-muted">MT {{ last_disb.amount|floatformat:2 }}</small>
-                        {% else %}
-                          —
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if last_disb %}
-                          {{ last_disb.company_account.name }}<br>
-                          <small class="text-muted">{{ last_disb.company_account.account_identifier }}</small>
-                        {% else %}
-                          —
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if last_disb and last_disb.attachment %}
-                          <a href="{{ last_disb.attachment.url }}" target="_blank" class="btn btn-outline-primary btn-xs">
-                            <i class="material-symbols-rounded" style="font-size:16px;">attach_file</i>
-                          </a>
-                        {% else %}
-                          —
-                        {% endif %}
-                      </td>
+
+                      <!-- Botão de acção -->
                       <td>
                         {% if loan.disbursements.exists %}
                           <button type="button" class="btn btn-outline-secondary btn-xs" disabled>
@@ -96,7 +130,6 @@
                         {% endif %}
                       </td>
                     </tr>
-                    {% endwith %}
                   {% endfor %}
                 </tbody>
               </table>
@@ -168,6 +201,33 @@
             </div>
           </div>
 
+          <!-- NOVOS CAMPOS: conta do cliente a creditar -->
+          <hr class="my-3">
+
+          <div class="mb-2">
+            <small class="text-muted">
+              Caso o cliente tenha mais de uma conta, indique explicitamente qual será creditada.
+            </small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nome de conta a creditar (cliente)</label>
+            <div class="input-group input-group-outline">
+              <input type="text" class="form-control" name="client_account_name" id="id_client_account_name"
+                     placeholder="Ex.: Carteira móvel · M-Pesa, Conta bancária · BCI MZN">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Número de conta a creditar (cliente)</label>
+            <div class="input-group input-group-outline">
+              <input type="text" class="form-control" name="client_account_number" id="id_client_account_number"
+                     placeholder="Nº de conta / número de telemóvel / NIB">
+            </div>
+          </div>
+
+          <hr class="my-3">
+
           <div class="mb-3">
             <label class="form-label">Comprovativo (opcional)</label>
             <div class="input-group input-group-outline">
@@ -195,7 +255,6 @@
 
 {% block extra_js %}
   <!-- DataTables + Buttons -->
-
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -237,6 +296,8 @@
         const tr = $(this).closest('tr');
         const loanId = tr.data('loan-id');
         const principal = tr.data('principal');
+        const clientAccName = tr.data('client-account-name') || '';
+        const clientAccNumber = tr.data('client-account-number') || '';
 
         $('#id_disb_loan_id').val(loanId);
         $('#id_disb_company_account').val('');
@@ -245,6 +306,10 @@
         $('#id_disb_method').val('cash');
         $('#id_disb_attachment').val('');
         $('#id_disb_notes').val('');
+
+        // Pré-preencher nome e número de conta do cliente (se existir conta principal)
+        $('#id_client_account_name').val(clientAccName);
+        $('#id_client_account_number').val(clientAccNumber);
 
         $('#disburseLoanModal').modal('show');
       });

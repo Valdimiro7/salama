@@ -1,0 +1,199 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-11 mx-auto">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Empréstimos Activos</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Carteira de empréstimos actualmente activos</h6>
+                <p class="text-sm text-muted mb-0">
+                  Empréstimos que já foram desembolsados e ainda não foram encerrados. 
+                  Use esta lista para acompanhar saldos, termos e contas envolvidas.
+                </p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="active-loans-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Membro</th>
+                    <th>Tipo</th>
+                    <th>Valor Empréstimo (MT)</th>
+                    <th>Valor Juros (MT)</th>
+                    <th>Total a Reembolsar (MT)</th>
+                    <th>Prazo</th>
+                    <th>Data de Início</th>
+                    <th>1ª Prestação</th>
+                    <th>Conta da Empresa (Saída)</th>
+                    <th>Requisitado por</th>
+                    <th>Data Desembolso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for loan in loans %}
+                    <tr>
+                      <!-- ID -->
+                      <td>{{ loan.id }}</td>
+
+                      <!-- Membro -->
+                      <td>
+                        {{ loan.member.first_name }} {{ loan.member.last_name }}
+                        <br>
+                        <small class="text-muted">
+                          {{ loan.member.phone }}{% if loan.member.city %} · {{ loan.member.city }}{% endif %}
+                        </small>
+                      </td>
+
+                      <!-- Tipo de empréstimo -->
+                      <td>{{ loan.loan_type.name|default:"—" }}</td>
+
+                      <!-- Valor do empréstimo -->
+                      <td>{{ loan.principal_amount|floatformat:2 }}</td>
+
+                      <!-- Valor de Juros (MT) -->
+                      <td>
+                        {% if loan.total_interest %}
+                          {{ loan.total_interest|floatformat:2 }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Total a Reembolsar (MT) -->
+                      <td>
+                        {% if loan.total_to_repay %}
+                          {{ loan.total_to_repay|floatformat:2 }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Prazo -->
+                      <td>
+                        {{ loan.term_periods }}
+                        {% if loan.period_type == "monthly" %}
+                          meses
+                        {% elif loan.period_type == "daily" %}
+                          dias
+                        {% else %}
+                          períodos
+                        {% endif %}
+                      </td>
+
+                      <!-- Data de Início -->
+                      <td>
+                        {% if loan.release_date %}
+                          {{ loan.release_date }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- 1ª Prestação -->
+                      <td>
+                        {% if loan.first_payment_date %}
+                          {{ loan.first_payment_date }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Conta da Empresa (Saída) -->
+                      <td>
+                        {% if loan.disbursed_company_account %}
+                          {{ loan.disbursed_company_account.name }}<br>
+                          <small class="text-muted">
+                            {{ loan.disbursed_company_account.account_identifier }}
+                          </small>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Requisitado por (quem aprovou o empréstimo) -->
+                      <td>
+                        {% if loan.approved_by %}
+                          {{ loan.approved_by.get_full_name|default:loan.approved_by.username }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Data Desembolso -->
+                      <td>
+                        {% if loan.disbursed_date %}
+                          {{ loan.disbursed_date }}
+                          <br>
+                          {% if loan.disbursed_amount %}
+                            <small class="text-muted">
+                              MT {{ loan.disbursed_amount|floatformat:2 }}
+                            </small>
+                          {% endif %}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      $('#active-loans-table').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[0, 'desc']],
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+    });
+  </script>
+{% endblock extra_js %}

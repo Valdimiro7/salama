@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db import transaction as db_transaction
 from django.http import JsonResponse
+from django.db.models import F, ExpressionWrapper, DecimalField
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 
@@ -19,16 +20,55 @@ from core.models import (
 @login_required
 def loan_disbursement_list(request):
     """
-    Lista empréstimos aprovados (status='approved') e respectivos desembolsos (se existirem).
-    Apenas empréstimos aprovados aparecem aqui para poderem ser desembolsados.
+    Lista empréstimos aprovados (status='approved') e respectivos desembolsos.
+    - Calcula total_to_repay = payment_per_period * term_periods
+    - Calcula total_interest = total_to_repay - principal_amount
+    - Anexa info da conta do cliente (nome + número) ao objecto loan
     """
-    loans = (
+    loans_qs = (
         Loan.objects
-        .select_related("member", "loan_type")
-        .prefetch_related("disbursements", "disbursements__company_account")
+        .select_related("member", "loan_type", "approved_by")
+        .prefetch_related(
+            "disbursements",
+            "disbursements__company_account",
+            "member__client_accounts__account_type",
+        )
         .filter(status="approved")
+        .annotate(
+            total_to_repay=ExpressionWrapper(
+                F("payment_per_period") * F("term_periods"),
+                output_field=DecimalField(max_digits=15, decimal_places=2),
+            ),
+            total_interest=ExpressionWrapper(
+                F("payment_per_period") * F("term_periods") - F("principal_amount"),
+                output_field=DecimalField(max_digits=15, decimal_places=2),
+            ),
+        )
         .order_by("-id")
     )
+
+    # Transformar em lista para podermos anexar atributos calculados em Python
+    loans = list(loans_qs)
+
+    for loan in loans:
+        # primeira conta activa do cliente (se existir)
+        ca = (
+            loan.member.client_accounts
+            .filter(is_active=True)
+            .select_related("account_type")
+            .order_by("id")
+            .first()
+        )
+
+        if ca:
+            loan.client_account_name_to_credit = (
+                f"{ca.account_type.get_category_display()} · {ca.account_type.name}"
+            )
+            loan.client_account_identifier_to_credit = ca.account_identifier
+        else:
+            loan.client_account_name_to_credit = ""
+            loan.client_account_identifier_to_credit = ""
+
     company_accounts = CompanyAccount.objects.filter(is_active=True).order_by("name")
 
     context = {
@@ -50,28 +90,25 @@ def register_disbursement(request, loan_id):
     - cria Transaction (saída)
     - actualiza saldo da conta da empresa
     - muda Loan.status para 'disbursed'
+    - regista opcionalmente o nome/número da conta do cliente utilizada
     """
-    # Buscar o empréstimo
     loan = get_object_or_404(
         Loan.objects.select_related("member"),
         pk=loan_id
     )
 
-    # Apenas empréstimos aprovados podem ser desembolsados
     if loan.status != "approved":
         return JsonResponse(
             {"success": False, "message": "Apenas empréstimos aprovados podem ser desembolsados."},
             status=400,
         )
 
-    # Se só permitires um desembolso por empréstimo:
     if loan.disbursements.exists():
         return JsonResponse(
             {"success": False, "message": "Este empréstimo já foi desembolsado."},
             status=400,
         )
 
-    # Ler dados do POST
     company_account_id = request.POST.get("company_account", "").strip()
     disburse_date_str = request.POST.get("disburse_date", "").strip()
     amount_raw = request.POST.get("amount", "").strip()
@@ -79,7 +116,11 @@ def register_disbursement(request, loan_id):
     notes = request.POST.get("notes", "").strip()
     attachment = request.FILES.get("attachment")
 
-    # === Validar conta da empresa ===
+    # NOVOS CAMPOS: conta do cliente a creditar (opcionais)
+    client_account_name = request.POST.get("client_account_name", "").strip()
+    client_account_number = request.POST.get("client_account_number", "").strip()
+
+    # Conta da empresa
     if not company_account_id:
         return JsonResponse(
             {"success": False, "message": "Selecione a conta da empresa para o desembolso."},
@@ -93,7 +134,7 @@ def register_disbursement(request, loan_id):
             status=400,
         )
 
-    # === Validar data do desembolso ===
+    # Data
     if not disburse_date_str:
         return JsonResponse(
             {"success": False, "message": "Informe a data de desembolso."},
@@ -107,7 +148,7 @@ def register_disbursement(request, loan_id):
             status=400,
         )
 
-    # === Validar valor ===
+    # Valor
     if not amount_raw:
         return JsonResponse(
             {"success": False, "message": "Informe o valor de desembolso."},
@@ -123,9 +164,8 @@ def register_disbursement(request, loan_id):
             status=400,
         )
 
-    # === Verificar saldo disponível antes de criar qualquer coisa ===
+    # Verificar saldo disponível
     current_balance = account.balance or Decimal("0")
-
     if amount > current_balance:
         return JsonResponse(
             {
@@ -139,7 +179,7 @@ def register_disbursement(request, loan_id):
             status=400,
         )
 
-    # === Criar registo de desembolso ===
+    # Criar LoanDisbursement
     disb = LoanDisbursement.objects.create(
         loan=loan,
         member=loan.member,
@@ -151,23 +191,33 @@ def register_disbursement(request, loan_id):
         notes=notes or None,
     )
 
-    # === Actualizar saldo da conta (saída) ===
+    # Actualizar saldo da conta
     old_balance = current_balance
     account.balance = old_balance - amount
     account.save(update_fields=["balance"])
     new_balance = account.balance
 
-    # === Criar transacção respeitando o modelo Transaction ===
+    # Descrição da transacção, incluindo info da conta do cliente (se fornecida)
+    desc = (
+        f"Desembolso de empréstimo (Loan #{loan.id}) "
+        f"para {loan.member.first_name} {loan.member.last_name}"
+    )
+
+    if client_account_name or client_account_number:
+        desc += " | Conta cliente: "
+        if client_account_name:
+            desc += client_account_name
+        if client_account_number:
+            desc += f" ({client_account_number})"
+
+    # Transacção de saída
     Transaction.objects.create(
         company_account=account,
-        tx_type=Transaction.TX_TYPE_OUT,          # "OUT" (saída)
-        source_type="loan_disbursement",          # ORIGEM: Desembolso de Empréstimo
-        source_id=disb.id,                        # referência ao desembolso
+        tx_type=Transaction.TX_TYPE_OUT,
+        source_type="loan_disbursement",
+        source_id=disb.id,
         tx_date=disburse_date,
-        description=(
-            f"Desembolso de empréstimo (Loan #{loan.id}) "
-            f"para {loan.member.first_name} {loan.member.last_name}"
-        ),
+        description=desc,
         amount=amount,
         balance_before=old_balance,
         balance_after=new_balance,
@@ -175,7 +225,6 @@ def register_disbursement(request, loan_id):
         created_at=timezone.now(),
     )
 
-    # === Actualizar status do empréstimo ===
     loan.status = "disbursed"
     loan.save(update_fields=["status"])
 

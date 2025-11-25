@@ -247,13 +247,8 @@ def pending_loans_list(request):
 
 #============================================================================================================
 #============================================================================================================
-require_POST
+@require_POST
 def confirm_loan(request, loan_id):
-    """
-    Confirma um empréstimo pendente:
-    - muda status para 'approved'
-    O desembolso será feito noutra secção.
-    """
     loan = get_object_or_404(Loan, pk=loan_id)
 
     if loan.status != "pending":
@@ -263,11 +258,13 @@ def confirm_loan(request, loan_id):
         )
 
     loan.status = "approved"
-    loan.save(update_fields=["status"])
+    loan.approved_by = request.user         
+    loan.save(update_fields=["status", "approved_by"])
 
     return JsonResponse(
         {"success": True, "message": "Empréstimo confirmado. Agora pode ser desembolsado na secção Desembolso."}
     )
+
 
 #============================================================================================================
 #============================================================================================================
