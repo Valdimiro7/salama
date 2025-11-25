@@ -229,6 +229,36 @@
                 </div>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link text-dark" data-bs-toggle="collapse" href="#menu-tuktuk" role="button"
+                   aria-expanded="false" aria-controls="menu-tuktuk">
+                    <i class="material-symbols-rounded opacity-5">airport_shuttle</i>
+                    <span class="nav-link-text ms-2 ps-1">Leasing Tuk-Tuk</span>
+                </a>
+                <div class="collapse" id="menu-tuktuk">
+                    <ul class="nav ms-4">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="{% url 'core:tuktuk_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">garage</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Frota de Tuk-Tuk </span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="{% url 'core:tuktuk_lease_contract_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">description</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Contratos de Leasing </span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="{% url 'core:tuktuk_lease_payment_list' %}">
+                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">credit_score</i>
+                                <span class="sidenav-normal ms-2 ps-1"> Pagamentos Semanais </span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
             <!-- UTILIZADORES -->
             <li class="nav-item">
                 <a class="nav-link text-dark" data-bs-toggle="collapse" href="#menu-utilizadores" role="button"

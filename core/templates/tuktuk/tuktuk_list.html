@@ -1,0 +1,145 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-11 mx-auto">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Frota de Tuk-Tuk</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+
+            <!-- KPI CARDS -->
+            <div class="row mb-4">
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Total de Tuk-Tuk</p>
+                    <h4 class="mb-0">{{ kpi_total }}</h4>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Disponíveis</p>
+                    <h5 class="mb-0 text-success">{{ kpi_available }}</h5>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Em leasing</p>
+                    <h5 class="mb-0 text-primary">{{ kpi_leased }}</h5>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Em manutenção</p>
+                    <h5 class="mb-0 text-warning">{{ kpi_maintenance }}</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Lista de Tuk-Tuk</h6>
+                <p class="text-sm text-muted mb-0">
+                  Gere a frota de Tuk-Tuk utilizados para contratos de leasing.
+                </p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="tuktuk-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Matrícula</th>
+                    <th>Modelo</th>
+                    <th>Ano</th>
+                    <th>Nº Chassis</th>
+                    <th>Renda semanal padrão (MT)</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in tuktuks %}
+                    <tr>
+                      <td>{{ t.id }}</td>
+                      <td>{{ t.plate_number }}</td>
+                      <td>{{ t.model|default:"—" }}</td>
+                      <td>{{ t.year|default:"—" }}</td>
+                      <td>{{ t.chassis_number|default:"—" }}</td>
+                      <td>{{ t.weekly_rent_default|floatformat:2 }}</td>
+                      <td>
+                        {% if t.status == "available" %}
+                          <span class="badge bg-success">Disponível</span>
+                        {% elif t.status == "leased" %}
+                          <span class="badge bg-primary">Em leasing</span>
+                        {% elif t.status == "maintenance" %}
+                          <span class="badge bg-warning text-dark">Manutenção</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      $('#tuktuk-table').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[0, 'asc']],
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+    });
+  </script>
+{% endblock extra_js %}

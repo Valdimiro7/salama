@@ -1,0 +1,163 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-11 mx-auto">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Contratos de Leasing · Tuk-Tuk</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+
+            <!-- KPI CARDS -->
+            <div class="row mb-4">
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Total de contratos</p>
+                    <h4 class="mb-0">{{ kpi_total }}</h4>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Contratos activos</p>
+                    <h5 class="mb-0 text-success">{{ kpi_active }}</h5>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Renda semanal total (MT)</p>
+                    <h5 class="mb-0">{{ kpi_weekly_sum|floatformat:2 }}</h5>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                  <div class="card-body py-3">
+                    <p class="text-sm text-muted mb-1">Tuk-Tuk em leasing</p>
+                    <h5 class="mb-0 text-primary">{{ kpi_tuktuks_in_leasing }}</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Contratos de Leasing</h6>
+                <p class="text-sm text-muted mb-0">
+                  Lista de contratos entre Tuk-Tuk e motoristas/cliente, com rendas semanais.
+                </p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="tuktuk-contract-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tuk-Tuk</th>
+                    <th>Motorista</th>
+                    <th>Renda semanal (MT)</th>
+                    <th>Data início</th>
+                    <th>Data fim prevista</th>
+                    <th>Status</th>
+                    <th>Conta da empresa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for c in contracts %}
+                    <tr>
+                      <td>{{ c.id }}</td>
+                      <td>
+                        {{ c.tuktuk.plate_number }}
+                        <br>
+                        <small class="text-muted">
+                          {{ c.tuktuk.model|default:"—" }}
+                        </small>
+                      </td>
+                      <td>
+                        {{ c.driver.first_name }} {{ c.driver.last_name }}
+                        <br>
+                        <small class="text-muted">
+                          {{ c.driver.phone }}
+                        </small>
+                      </td>
+                      <td>{{ c.weekly_rent|floatformat:2 }}</td>
+                      <td>{{ c.start_date }}</td>
+                      <td>{{ c.end_date|default:"—" }}</td>
+                      <td>
+                        {% if c.status == "active" %}
+                          <span class="badge bg-success">Activo</span>
+                        {% elif c.status == "finished" %}
+                          <span class="badge bg-secondary">Terminado</span>
+                        {% else %}
+                          <span class="badge bg-danger">Cancelado</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ c.company_account.name }}
+                        <br>
+                        <small class="text-muted">
+                          {{ c.company_account.account_identifier }}
+                        </small>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      $('#tuktuk-contract-table').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[0, 'desc']],
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+    });
+  </script>
+{% endblock extra_js %}

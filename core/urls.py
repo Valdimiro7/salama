@@ -16,6 +16,7 @@ from core.views.payments.loan_disbursement_views import loan_disbursement_list, 
 from core.views.loan.active_loan import active_loans_list, active_loan_details
 from core.views.payments.loan_repayment_views import loan_repayment_list, register_repayment
 from core.views.loan.all_loan_list_views import loan_list_all, loan_details_any_status
+from core.views.tuktuk.tuktuk_views import tuktuk_list, tuktuk_lease_contract_list, tuktuk_lease_payment_list, register_tuktuk_lease_payment
 
 
 
@@ -96,5 +97,11 @@ urlpatterns = [
     path("loans/<int:loan_id>/disburse/", register_disbursement, name="register_disbursement"),
     path("loans/repayments/", loan_repayment_list, name="loan_repayment_list"),
     path("loans/<int:loan_id>/repay/", register_repayment, name="register_repayment"),
+    
+    
+    path("tuktuk/", tuktuk_list, name="tuktuk_list"),
+    path("tuktuk/contracts/", tuktuk_lease_contract_list, name="tuktuk_lease_contract_list"),
+    path("tuktuk/payments/", tuktuk_lease_payment_list, name="tuktuk_lease_payment_list"),
+    path("tuktuk/payments/register/", register_tuktuk_lease_payment, name="register_tuktuk_lease_payment"),
 
 ]
