@@ -59,6 +59,12 @@
                   Gere a frota de Tuk-Tuk utilizados para contratos de leasing.
                 </p>
               </div>
+              <div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-tuktuk">
+                  <i class="material-symbols-rounded me-1" style="font-size:18px;">add</i>
+                  Adicionar Tuk-Tuk
+                </button>
+              </div>
             </div>
 
             <div class="table-responsive">
@@ -110,10 +116,86 @@
 
   {% include "includes/sl_footer.html" %}
 </div>
+
+<!-- MODAL: ADICIONAR TUK-TUK -->
+<div class="modal fade" id="addTukTukModal" tabindex="-1" aria-labelledby="addTukTukModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addTukTukForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addTukTukModalLabel">Adicionar Tuk-Tuk</h5>
+          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label class="form-label">Matrícula *</label>
+            <div class="input-group input-group-outline">
+              <input type="text" class="form-control" name="plate_number" id="id_plate_number">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Modelo</label>
+            <div class="input-group input-group-outline">
+              <input type="text" class="form-control" name="model" id="id_model">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Ano</label>
+            <div class="input-group input-group-outline">
+              <input type="number" class="form-control" name="year" id="id_year">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nº Chassis</label>
+            <div class="input-group input-group-outline">
+              <input type="text" class="form-control" name="chassis_number" id="id_chassis_number">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Renda semanal padrão (MT)</label>
+            <div class="input-group input-group-outline">
+              <input type="number" step="0.01" class="form-control" name="weekly_rent_default" id="id_weekly_rent_default">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Status inicial</label>
+            <div class="input-group input-group-outline">
+              <select class="form-select" name="status" id="id_status">
+                <option value="available">Disponível</option>
+                <option value="leased">Em leasing</option>
+                <option value="maintenance">Manutenção</option>
+                <option value="inactive">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Notas (opcional)</label>
+            <div class="input-group input-group-outline">
+              <textarea class="form-control" rows="2" name="notes" id="id_notes"></textarea>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
 {% block extra_js %}
-  <!-- DataTables + Buttons -->
+  <!-- DataTables + Buttons + SweetAlert -->
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -121,6 +203,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -140,6 +223,53 @@
           url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
         }
       });
+
+      const addModalEl = document.getElementById('addTukTukModal');
+      const addModal = new bootstrap.Modal(addModalEl);
+
+      // abrir modal
+      document.getElementById('btn-open-add-tuktuk').addEventListener('click', function () {
+        document.getElementById('addTukTukForm').reset();
+        addModal.show();
+      });
+
+      // submit form via AJAX
+      $('#addTukTukForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const plate = $('#id_plate_number').val().trim();
+        if (!plate) {
+          Swal.fire('Validação', 'Informe a matrícula do Tuk-Tuk.', 'warning');
+          return;
+        }
+
+        const formData = $(this).serialize();
+
+        $.ajax({
+          url: "{% url 'core:create_tuktuk' %}",
+          type: "POST",
+          data: formData,
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          success: function (resp) {
+            if (resp.success) {
+              addModal.hide();
+              Swal.fire({
+                icon: "success",
+                title: "Tuk-Tuk criado",
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => window.location.reload());
+            } else {
+              Swal.fire("Erro", resp.message || "Falha ao criar Tuk-Tuk.", "error");
+            }
+          },
+          error: function (xhr) {
+            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar Tuk-Tuk.", "error");
+          }
+        });
+      });
+
     });
   </script>
 {% endblock extra_js %}

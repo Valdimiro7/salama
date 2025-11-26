@@ -20,7 +20,8 @@
                 <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
                 <p class="text-sm text-muted mb-0">
                   Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas,
-                  Desembolsos de Empréstimos e ajustes manuais.
+                  Desembolsos de Empréstimos, Reembolsos de Empréstimos, Pagamentos de Leasing Tuk-Tuk
+                  e ajustes manuais.
                 </p>
               </div>
               <!-- futuro: botão Nova Transacção manual -->
@@ -66,6 +67,14 @@
                         Manual
                       {% elif t.source_type == "loan_disbursement" %}
                         Desembolso de Empréstimo
+                      {% elif t.source_type == "loan_repayment" %}
+                        Reembolso de Empréstimo
+                      {% elif t.source_type == "tuktuk_lease_payment" %}
+                        Pagamento Leasing Tuk-Tuk
+                      {% elif t.source_type == "opening_balance" %}
+                        Saldo Inicial
+                      {% elif t.source_type == "adjustment" %}
+                        Ajuste Manual
                       {% else %}
                         —
                       {% endif %}
