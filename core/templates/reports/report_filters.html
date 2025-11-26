@@ -1,0 +1,140 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-8 mx-auto">
+
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Relatórios</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+
+            <p class="text-sm text-muted mb-4">
+              Seleccione o tipo de relatório, o período e, se necessário, Membro, Utilizador ou Conta da Empresa.
+              O resultado será gerado em PDF.
+            </p>
+
+            <form method="post"
+                  action="{% url 'core:generate_report_pdf' %}"
+                  target="_blank"
+                  class="row g-3">
+              {% csrf_token %}
+
+              <!-- Tipo de Relatório -->
+              <div class="col-12">
+                <label for="id_report_type" class="form-label">Tipo de Relatório *</label>
+                <select name="report_type" id="id_report_type" class="form-select" required>
+                  <option value="" selected disabled>-- Seleccione --</option>
+                  <option value="incomes">Rendimentos</option>
+                  <option value="expenses">Despesas</option>
+                  <option value="balances">Saldos</option>
+                  <option value="loans">Empréstimos</option>
+                  <option value="disbursements">Desembolsos</option>
+                  <option value="repayments">Reembolsos</option>
+                  <option value="transactions">Transacções</option>
+                  <option value="profits">Lucros</option>
+                </select>
+                <small class="text-xs text-muted">
+                  Ex.: Lucros para ver Rendimentos - Despesas no período.
+                </small>
+              </div>
+
+              <!-- Intervalo de Datas -->
+              <div class="col-md-6">
+                <label for="id_start_date" class="form-label">Data Inicial</label>
+                <input type="date" name="start_date" id="id_start_date" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label for="id_end_date" class="form-label">Data Final</label>
+                <input type="date" name="end_date" id="id_end_date" class="form-control">
+              </div>
+
+              <hr class="horizontal dark my-3">
+
+              <!-- Filtros opcionais -->
+              <div class="col-md-6">
+                <label for="id_member" class="form-label">Membro (opcional)</label>
+                <select name="member" id="id_member" class="form-select select2">
+                  <option value="">-- Todos --</option>
+                  {% for m in members %}
+                    <option value="{{ m.id }}">
+                      {{ m.first_name }} {{ m.last_name }} ({{ m.phone }})
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="text-xs text-muted">
+                  Relevante para: Empréstimos, Desembolsos, Reembolsos.
+                </small>
+              </div>
+
+              <div class="col-md-6">
+                <label for="id_user" class="form-label">Utilizador (criado por) (opcional)</label>
+                <select name="user" id="id_user" class="form-select select2">
+                  <option value="">-- Todos --</option>
+                  {% for u in users %}
+                    <option value="{{ u.id }}">
+                      {{ u.get_full_name|default:u.username }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="text-xs text-muted">
+                  Relevante para: Empréstimos (criados pelo utilizador).
+                </small>
+              </div>
+
+              <div class="col-md-6">
+                <label for="id_company_account" class="form-label">Conta da Empresa (opcional)</label>
+                <select name="company_account" id="id_company_account" class="form-select select2">
+                  <option value="">-- Todas --</option>
+                  {% for acc in company_accounts %}
+                    <option value="{{ acc.id }}">
+                      {{ acc.name }} ({{ acc.account_identifier }})
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="text-xs text-muted">
+                  Relevante para: Rendimentos, Despesas, Empréstimos, Desembolsos, Reembolsos, Transacções, Lucros.
+                </small>
+              </div>
+
+              <div class="col-12 d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary">
+                  <i class="material-symbols-rounded me-1" style="font-size:18px;">picture_as_pdf</i>
+                  Gerar PDF
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Se estiveres a usar Select2 globalmente, só activa aqui
+    if ($.fn.select2) {
+      $('.select2').select2({
+        width: '100%',
+        theme: 'classic',
+        placeholder: 'Selecione...',
+        allowClear: true
+      });
+    }
+  });
+</script>
+{% endblock extra_js %}

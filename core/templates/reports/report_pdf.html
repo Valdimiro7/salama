@@ -1,0 +1,406 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>{{ report_title }}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      color: #111827;
+    }
+    h1, h2, h3, h4, h5 {
+      margin: 0;
+      padding: 0;
+    }
+    .header {
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+    }
+    .header-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #064E3B;
+    }
+    .meta {
+      font-size: 10px;
+      color: #6b7280;
+    }
+    .meta span {
+      display: inline-block;
+      margin-right: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th {
+      background: #f3f4f6;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    tfoot td {
+      font-weight: bold;
+      background: #f9fafb;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 9px;
+      color: #fff;
+    }
+    .badge-success { background: #16a34a; }
+    .badge-danger { background: #dc2626; }
+    .badge-warning { background: #f59e0b; color: #111827; }
+    .badge-info { background: #0ea5e9; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- Cabeçalho -->
+  <div class="header">
+    <div class="header-title">{{ report_title }}</div>
+    <div class="meta">
+      <span>Período:
+        {% if start_date %}{{ start_date }}{% else %}—{% endif %}
+        a
+        {% if end_date %}{{ end_date }}{% else %}—{% endif %}
+      </span>
+      {% if member %}
+        <span>Membro: {{ member.first_name }} {{ member.last_name }}</span>
+      {% endif %}
+      {% if account %}
+        <span>Conta: {{ account.name }}</span>
+      {% endif %}
+      {% if user_obj %}
+        <span>Utilizador: {{ user_obj.get_full_name|default:user_obj.username }}</span>
+      {% endif %}
+      <span>Gerado por: {{ generated_by.get_full_name|default:generated_by.username }}</span>
+      <span>Data: {{ now|default:None }}</span>
+    </div>
+  </div>
+
+  <!-- ================= RENDIMENTOS ================= -->
+  {% if report_type == "incomes" %}
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Categoria</th>
+          <th>Descrição</th>
+          <th>Conta</th>
+          <th class="text-right">Valor (MT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.income_date }}</td>
+            <td>{{ r.category.name|default:"—" }}</td>
+            <td>{{ r.description }}</td>
+            <td>{{ r.company_account.name|default:"—" }}</td>
+            <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="text-center">Sem registos para o período seleccionado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right">Total</td>
+          <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  {% endif %}
+
+  <!-- ================= DESPESAS ================= -->
+  {% if report_type == "expenses" %}
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Categoria</th>
+          <th>Descrição</th>
+          <th>Conta</th>
+          <th class="text-right">Valor (MT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.expense_date }}</td>
+            <td>{{ r.category.name|default:"—" }}</td>
+            <td>{{ r.description }}</td>
+            <td>{{ r.company_account.name|default:"—" }}</td>
+            <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="text-center">Sem registos para o período seleccionado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right">Total</td>
+          <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  {% endif %}
+
+  <!-- ================= SALDOS ================= -->
+  {% if report_type == "balances" %}
+    <p class="mt-1">Snapshot dos saldos actuais das contas da empresa.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Conta</th>
+          <th>Identificador</th>
+          <th class="text-right">Saldo Actual (MT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for acc in accounts %}
+          <tr>
+            <td>{{ acc.name }}</td>
+            <td>{{ acc.account_identifier }}</td>
+            <td class="text-right">{{ acc.balance|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">Sem contas registadas.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <!-- ================= EMPRÉSTIMOS ================= -->
+  {% if report_type == "loans" %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Membro</th>
+          <th>Tipo</th>
+          <th class="text-right">Principal (MT)</th>
+          <th>Períodos</th>
+          <th>Estado</th>
+          <th>Criado em</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.member.first_name }} {{ r.member.last_name }}</td>
+            <td>{{ r.loan_type.name|default:"—" }}</td>
+            <td class="text-right">{{ r.principal_amount|floatformat:2 }}</td>
+            <td>{{ r.term_periods }} {{ r.get_period_type_display }}</td>
+            <td>{{ r.get_status_display|default:r.status }}</td>
+            <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center">Sem empréstimos para o período seleccionado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-right">Total Principal</td>
+          <td class="text-right">{{ total_principal|default:0|floatformat:2 }}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  {% endif %}
+
+  <!-- ================= DESEMBOLSOS ================= -->
+  {% if report_type == "disbursements" %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data</th>
+          <th>Membro</th>
+          <th>Conta</th>
+          <th class="text-right">Valor (MT)</th>
+          <th>Método</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.disburse_date }}</td>
+            <td>{{ r.member.first_name }} {{ r.member.last_name }}</td>
+            <td>{{ r.company_account.name }}</td>
+            <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+            <td>{{ r.get_method_display|default:r.method }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center">Sem desembolsos para o período seleccionado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right">Total Desembolsado</td>
+          <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  {% endif %}
+
+  <!-- ================= REEMBOLSOS ================= -->
+  {% if report_type == "repayments" %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data</th>
+          <th>Membro</th>
+          <th>Conta</th>
+          <th class="text-right">Total (MT)</th>
+          <th class="text-right">Juros</th>
+          <th class="text-right">Principal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.payment_date }}</td>
+            <td>{{ r.member.first_name }} {{ r.member.last_name }}</td>
+            <td>{{ r.company_account.name }}</td>
+            <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+            <td class="text-right">{{ r.interest_amount|floatformat:2 }}</td>
+            <td class="text-right">{{ r.principal_amount|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center">Sem reembolsos para o período seleccionado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right">Totais</td>
+          <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
+          <td class="text-right">{{ total_interest|default:0|floatformat:2 }}</td>
+          <td class="text-right">{{ total_principal|default:0|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  {% endif %}
+
+  <!-- ================= TRANSACÇÕES ================= -->
+  {% if report_type == "transactions" %}
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Conta</th>
+          <th>Tipo</th>
+          <th>Descrição</th>
+          <th class="text-right">Valor (MT)</th>
+          <th class="text-right">Saldo Antes</th>
+          <th class="text-right">Saldo Depois</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.tx_date }}</td>
+            <td>{{ r.company_account.name }}</td>
+            <td>
+              {% if r.tx_type == "IN" %}
+                <span class="badge badge-success">Entrada</span>
+              {% else %}
+                <span class="badge badge-danger">Saída</span>
+              {% endif %}
+            </td>
+            <td>{{ r.description }}</td>
+            <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+            <td class="text-right">{{ r.balance_before|floatformat:2 }}</td>
+            <td class="text-right">{{ r.balance_after|floatformat:2 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center">Sem transacções para o período seleccionado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right">Total Entradas</td>
+          <td class="text-right">{{ total_in|default:0|floatformat:2 }}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr>
+          <td colspan="4" class="text-right">Total Saídas</td>
+          <td class="text-right">{{ total_out|default:0|floatformat:2 }}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr>
+          <td colspan="4" class="text-right">Saldo Líquido (Entradas - Saídas)</td>
+          <td class="text-right">{{ net|default:0|floatformat:2 }}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  {% endif %}
+
+  <!-- ================= LUCROS ================= -->
+  {% if report_type == "profits" %}
+    <table>
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th class="text-right">Valor (MT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Total de Rendimentos</td>
+          <td class="text-right">{{ total_incomes|default:0|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td>Total de Despesas</td>
+          <td class="text-right">{{ total_expenses|default:0|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td><strong>Lucro Líquido (Rendimentos - Despesas)</strong></td>
+          <td class="text-right"><strong>{{ profit|default:0|floatformat:2 }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  {% endif %}
+
+</body>
+</html>

@@ -348,24 +348,10 @@
                      id="menu-relatorios">
                     <ul class="nav ms-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark {% if segment == 'report_portfolio' %}active fw-bold text-primary{% endif %}"
-                               href="#">
-                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">pie_chart</i>
-                                <span class="sidenav-normal ms-2 ps-1"> Relatório da Carteira </span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark {% if segment == 'report_risk' %}active fw-bold text-primary{% endif %}"
-                               href="#">
-                                <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">warning</i>
-                                <span class="sidenav-normal ms-2 ps-1"> Relatório de Risco </span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link text-dark {% if segment == 'report_payments' %}active fw-bold text-primary{% endif %}"
-                               href="#">
+                               href="{% url 'core:report_filters' %}">
                                 <i class="material-symbols-rounded opacity-5" style="font-size: 18px;">receipt</i>
-                                <span class="sidenav-normal ms-2 ps-1"> Relatório de Pagamentos </span>
+                                <span class="sidenav-normal ms-2 ps-1"> Gerar </span>
                             </a>
                         </li>
                     </ul>
