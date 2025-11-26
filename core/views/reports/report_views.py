@@ -1,6 +1,6 @@
 # core/views/report_views.py
 
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -46,6 +46,7 @@ def report_filters(request):
 
 #===================================================================================================
 #===================================================================================================
+
 @login_required
 @require_http_methods(["POST"])
 def generate_report_pdf(request):
@@ -56,22 +57,26 @@ def generate_report_pdf(request):
     if not report_type:
         return HttpResponseBadRequest("Tipo de relatório é obrigatório.")
 
-    # Intervalo de datas
+    # Intervalo de datas (compatível com Python < 3.7 — sem fromisoformat)
     start_date_str = (request.POST.get("start_date") or "").strip()
     end_date_str = (request.POST.get("end_date") or "").strip()
 
     today = date.today()
+
+    # Data inicial
     if start_date_str:
         try:
-            start_date = date.fromisoformat(start_date_str)
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         except ValueError:
             return HttpResponseBadRequest("Data inicial inválida.")
     else:
-        start_date = today.replace(day=1)  # primeiro dia do mês actual
+        # primeiro dia do mês actual
+        start_date = today.replace(day=1)
 
+    # Data final
     if end_date_str:
         try:
-            end_date = date.fromisoformat(end_date_str)
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
             return HttpResponseBadRequest("Data final inválida.")
     else:
@@ -259,41 +264,6 @@ def generate_report_pdf(request):
     # abre em nova aba (inline). Se quiser forçar download, usa attachment.
     response["Content-Disposition"] = f'inline; filename="{filename}"'
     return response
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-#===================================================================================================
-#===================================================================================================
-
-
-#===================================================================================================
-#===================================================================================================
-
 
 #===================================================================================================
 #===================================================================================================
