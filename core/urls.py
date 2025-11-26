@@ -1,6 +1,6 @@
 from django.urls import path
 from core.views.dashboard_view import dashboard_view
-from core.views.member.member_view import add_member, member_list, update_member, deactivate_member
+from core.views.member.member_view import add_member, member_list, update_member, deactivate_member, member_detail_json
 from core.views.account.account_view import account_type_list, create_account_type
 from core.views.account.account_view import client_account_list, create_client_account
 from core.views.account.account_view import company_account_list, create_company_account, update_company_account, deactivate_company_account
@@ -29,6 +29,7 @@ urlpatterns = [
     path("members/list/", member_list, name="member_list"),
     path("members/<int:member_id>/update/", update_member, name="update_member"),
     path("members/<int:member_id>/deactivate/", deactivate_member, name="deactivate_member"),
+    path("members/<int:member_id>/detail-json/", member_detail_json, name="member_detail_json"),
     
     
     

@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
-from core.models import Member
+from core.models import Member, Loan
 from django.urls import reverse
 from django.http import JsonResponse
+from datetime import datetime
 
 
 def add_member(request):
@@ -27,6 +28,9 @@ def add_member(request):
         gender = request.POST.get("gender", "").strip()
         manager_id = request.POST.get("manager", "").strip()
 
+        # NOVO: NUIT (no add)
+        nuit = request.POST.get("nuit", "").strip()
+
         form_data = {
             "first_name": first_name,
             "last_name": last_name,
@@ -41,6 +45,7 @@ def add_member(request):
             "marital_status": marital_status,
             "gender": gender,
             "manager": manager_id,
+            "nuit": nuit,
         }
 
         if not first_name:
@@ -74,20 +79,23 @@ def add_member(request):
                 marital_status=marital_status or None,
                 gender=gender or None,
                 manager=manager,
+                nuit=nuit or None,  # NOVO
             )
 
-            # Redirect para Lista de Membros com flag ?created=1
             url = reverse("core:member_list")
             return redirect(f"{url}?created=1")
 
     return render(
         request,
         "member/add_member.html",
-        {"gestores": gestores, 
-         "errors": errors, 
-         "form_data": form_data,
-         "segment": "member_add",},
+        {
+            "gestores": gestores,
+            "errors": errors,
+            "form_data": form_data,
+            "segment": "member_add",
+        },
     )
+
 
 
 #============================================================================================================
@@ -95,7 +103,12 @@ def add_member(request):
 def member_list(request):
     User = get_user_model()
     gestores = User.objects.filter(is_active=True).order_by("first_name", "last_name")
-    members = Member.objects.filter(is_active=True).order_by("-id")
+    members = (
+        Member.objects.filter(is_active=True)
+        .select_related("manager")
+        .prefetch_related("loans")
+        .order_by("-id")
+    )
     return render(
         request,
         "member/list_members.html",
@@ -105,6 +118,7 @@ def member_list(request):
             "segment": "members_list",
         },
     )
+
 
 #============================================================================================================
 #============================================================================================================
@@ -134,6 +148,14 @@ def update_member(request, member_id):
     gender = request.POST.get("gender", "").strip()
     manager_id = request.POST.get("manager", "").strip()
 
+    # NOVO: NUIT + KYC
+    nuit = request.POST.get("nuit", "").strip()
+    id_type = request.POST.get("id_type", "").strip()
+    id_number = request.POST.get("id_number", "").strip()
+    id_issue_date_str = request.POST.get("id_issue_date", "").strip()
+    id_expiry_date_str = request.POST.get("id_expiry_date", "").strip()
+    kyc_notes = request.POST.get("kyc_notes", "").strip()
+
     if not first_name or not last_name or not phone or not manager_id:
         return JsonResponse(
             {
@@ -148,6 +170,21 @@ def update_member(request, member_id):
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "Gestor inválido."}, status=400)
 
+    # Parse datas KYC (se vierem)
+    id_issue_date = None
+    if id_issue_date_str:
+        try:
+            id_issue_date = datetime.strptime(id_issue_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            id_issue_date = None
+
+    id_expiry_date = None
+    if id_expiry_date_str:
+        try:
+            id_expiry_date = datetime.strptime(id_expiry_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            id_expiry_date = None
+
     member.first_name = first_name
     member.last_name = last_name
     member.legal_name = legal_name or None
@@ -161,11 +198,37 @@ def update_member(request, member_id):
     member.marital_status = marital_status or None
     member.gender = gender or None
     member.manager = manager
-    member.save(update_fields=[
-        "first_name", "last_name", "legal_name", "is_company", "phone",
-        "alt_phone", "email", "city", "address", "profession",
-        "marital_status", "gender", "manager"
-    ])
+    member.nuit = nuit or None
+
+    member.id_type = id_type or None
+    member.id_number = id_number or None
+    member.id_issue_date = id_issue_date
+    member.id_expiry_date = id_expiry_date
+    member.kyc_notes = kyc_notes or None
+
+    member.save(
+        update_fields=[
+            "first_name",
+            "last_name",
+            "legal_name",
+            "is_company",
+            "phone",
+            "alt_phone",
+            "email",
+            "city",
+            "address",
+            "profession",
+            "marital_status",
+            "gender",
+            "manager",
+            "nuit",
+            "id_type",
+            "id_number",
+            "id_issue_date",
+            "id_expiry_date",
+            "kyc_notes",
+        ]
+    )
 
     return JsonResponse({"success": True, "message": "Membro actualizado com sucesso."})
 
@@ -193,6 +256,65 @@ def deactivate_member(request, member_id):
 
 #============================================================================================================
 #============================================================================================================
+def member_detail_json(request, member_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "message": "Não autenticado."}, status=401)
+
+    try:
+        member = (
+            Member.objects
+            .select_related("manager")
+            .get(pk=member_id, is_active=True)
+        )
+    except Member.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Membro não encontrado."}, status=404)
+
+    loans = (
+        Loan.objects
+        .filter(member=member)
+        .select_related("loan_type")
+        .order_by("-created_at")
+    )
+
+    loans_data = [
+        {
+            "id": l.id,
+            "principal_amount": str(l.principal_amount),
+            "status": l.status,
+            "loan_type": l.loan_type.name if l.loan_type else "",
+            "created_at": l.created_at.strftime("%Y-%m-%d") if l.created_at else None,
+            "release_date": l.release_date.strftime("%Y-%m-%d") if l.release_date else None,
+        }
+        for l in loans
+    ]
+
+    data = {
+        "success": True,
+        "member": {
+            "id": member.id,
+            "first_name": member.first_name,
+            "last_name": member.last_name,
+            "legal_name": member.legal_name,
+            "is_company": member.is_company,
+            "phone": member.phone,
+            "alt_phone": member.alt_phone,
+            "email": member.email,
+            "city": member.city,
+            "address": member.address,
+            "profession": member.profession,
+            "marital_status": member.marital_status,
+            "gender": member.gender,
+            "nuit": member.nuit,
+            "id_type": member.id_type,
+            "id_number": member.id_number,
+            "id_issue_date": member.id_issue_date.strftime("%Y-%m-%d") if member.id_issue_date else None,
+            "id_expiry_date": member.id_expiry_date.strftime("%Y-%m-%d") if member.id_expiry_date else None,
+            "kyc_notes": member.kyc_notes,
+            "manager_name": member.manager.get_full_name() or member.manager.username,
+        },
+        "loans": loans_data,
+    }
+    return JsonResponse(data)
 
 
 

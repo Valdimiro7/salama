@@ -43,62 +43,69 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {% for m in members %}
-                  <tr>
-                    <td>{{ m.id }}</td>
-                    <td>
-                      <strong>{{ m.first_name }} {{ m.last_name }}</strong>
-                      {% if m.legal_name %}
-                        <br><small class="text-muted">{{ m.legal_name }}</small>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if m.is_company %}
-                        <span class="badge bg-info text-white">Empresa</span>
-                      {% else %}
-                        <span class="badge bg-secondary text-white">Pessoa</span>
-                      {% endif %}
-                    </td>
-                    <td>{{ m.phone }}</td>
-                    <td>{{ m.email|default:"—" }}</td>
-                    <td>{{ m.city|default:"—" }}</td>
-                    <td>{{ m.manager.get_full_name|default:m.manager.username }}</td>
-                    <td>
-                      <div class="d-flex gap-1">
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-outline-primary btn-edit-member"
-                          data-id="{{ m.id }}"
-                          data-first-name="{{ m.first_name }}"
-                          data-last-name="{{ m.last_name }}"
-                          data-legal-name="{{ m.legal_name }}"
-                          data-is-company="{% if m.is_company %}1{% else %}0{% endif %}"
-                          data-phone="{{ m.phone }}"
-                          data-alt-phone="{{ m.alt_phone }}"
-                          data-email="{{ m.email }}"
-                          data-city="{{ m.city }}"
-                          data-address="{{ m.address }}"
-                          data-profession="{{ m.profession }}"
-                          data-marital-status="{{ m.marital_status }}"
-                          data-gender="{{ m.gender }}"
-                          data-manager="{{ m.manager.id }}"
-                        >
-                          <i class="material-symbols-rounded" style="font-size:18px;">edit</i>
-                        </button>
+                {% for m in members %}
+                <tr class="member-row" data-id="{{ m.id }}">
+                  <td>{{ m.id }}</td>
+                  <td>
+                    <strong>{{ m.first_name }} {{ m.last_name }}</strong>
+                    {% if m.legal_name %}
+                      <br><small class="text-muted">{{ m.legal_name }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if m.is_company %}
+                      <span class="badge bg-info text-white">Empresa</span>
+                    {% else %}
+                      <span class="badge bg-secondary text-white">Pessoa</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ m.phone }}</td>
+                  <td>{{ m.email|default:"—" }}</td>
+                  <td>{{ m.city|default:"—" }}</td>
+                  <td>{{ m.manager.get_full_name|default:m.manager.username }}</td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary btn-edit-member"
+                        data-id="{{ m.id }}"
+                        data-first-name="{{ m.first_name }}"
+                        data-last-name="{{ m.last_name }}"
+                        data-legal-name="{{ m.legal_name }}"
+                        data-is-company="{% if m.is_company %}1{% else %}0{% endif %}"
+                        data-phone="{{ m.phone }}"
+                        data-alt-phone="{{ m.alt_phone }}"
+                        data-email="{{ m.email }}"
+                        data-city="{{ m.city }}"
+                        data-address="{{ m.address }}"
+                        data-profession="{{ m.profession }}"
+                        data-marital-status="{{ m.marital_status }}"
+                        data-gender="{{ m.gender }}"
+                        data-manager="{{ m.manager.id }}"
+                        data-nuit="{{ m.nuit|default:'' }}"
+                        data-id-type="{{ m.id_type|default:'' }}"
+                        data-id-number="{{ m.id_number|default:'' }}"
+                        data-id-issue-date="{{ m.id_issue_date|date:'Y-m-d' }}"
+                        data-id-expiry-date="{{ m.id_expiry_date|date:'Y-m-d' }}"
+                        data-kyc-notes="{{ m.kyc_notes|default:'' }}"
+                      >
+                        <i class="material-symbols-rounded" style="font-size:18px;">edit</i>
+                      </button>
 
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-outline-danger btn-delete-member"
-                          data-id="{{ m.id }}"
-                          data-name="{{ m.first_name }} {{ m.last_name }}"
-                        >
-                          <i class="material-symbols-rounded" style="font-size:18px;">delete</i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger btn-delete-member"
+                        data-id="{{ m.id }}"
+                        data-name="{{ m.first_name }} {{ m.last_name }}"
+                      >
+                        <i class="material-symbols-rounded" style="font-size:18px;">delete</i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+
               </table>
             </div>
 
@@ -113,6 +120,7 @@
 </div>
 
 <!-- MODAL EDITAR MEMBRO -->
+<!-- MODAL EDITAR MEMBRO (com tabs) -->
 <div class="modal fade" id="editMemberModal" tabindex="-1" aria-labelledby="editMemberModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -126,111 +134,170 @@
 
           <input type="hidden" id="edit_member_id" name="member_id">
 
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Nome *</label>
-                <input type="text" class="form-control" name="first_name" id="edit_first_name">
-              </div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Apelido *</label>
-                <input type="text" class="form-control" name="last_name" id="edit_last_name">
-              </div>
-            </div>
-          </div>
+          <!-- NAV TABS -->
+          <ul class="nav nav-tabs" id="editMemberTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="tab-dados-tab" data-bs-toggle="tab"
+                      data-bs-target="#tab-dados" type="button" role="tab"
+                      aria-controls="tab-dados" aria-selected="true">
+                Dados principais
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-kyc-tab" data-bs-toggle="tab"
+                      data-bs-target="#tab-kyc" type="button" role="tab"
+                      aria-controls="tab-kyc" aria-selected="false">
+                KYC & Documentos
+              </button>
+            </li>
+          </ul>
 
-          <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="edit_is_company" name="is_company">
-            <label class="form-check-label" for="edit_is_company">É uma empresa?</label>
-          </div>
+          <div class="tab-content pt-3" id="editMemberTabsContent">
+            <!-- TAB DADOS PRINCIPAIS -->
+            <div class="tab-pane fade show active" id="tab-dados" role="tabpanel" aria-labelledby="tab-dados-tab">
 
-          <div class="mb-3">
-            <div class="input-group input-group-outline">
-              <label class="form-label">Nome Legal</label>
-              <input type="text" class="form-control" name="legal_name" id="edit_legal_name">
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Nome *</label>
+                    <input type="text" class="form-control" name="first_name" id="edit_first_name">
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Apelido *</label>
+                    <input type="text" class="form-control" name="last_name" id="edit_last_name">
+                  </div>
+                </div>
+              </div>
 
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Telefone *</label>
-                <input type="text" class="form-control" name="phone" id="edit_phone">
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="edit_is_company" name="is_company">
+                <label class="form-check-label" for="edit_is_company">É uma empresa?</label>
               </div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Telefone alternativo</label>
-                <input type="text" class="form-control" name="alt_phone" id="edit_alt_phone">
-              </div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-control" name="email" id="edit_email">
+              <div class="mb-3">
+                <div class="input-group input-group-outline">
+                  <label class="form-label">Nome Legal</label>
+                  <input type="text" class="form-control" name="legal_name" id="edit_legal_name">
+                </div>
               </div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Cidade</label>
-                <input type="text" class="form-control" name="city" id="edit_city">
-              </div>
-            </div>
-          </div>
 
-          <div class="mb-3">
-            <div class="input-group input-group-outline">
-              <label class="form-label">Endereço</label>
-              <textarea class="form-control" name="address" id="edit_address"></textarea>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Profissão</label>
-                <input type="text" class="form-control" name="profession" id="edit_profession">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Telefone *</label>
+                    <input type="text" class="form-control" name="phone" id="edit_phone">
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Telefone alternativo</label>
+                    <input type="text" class="form-control" name="alt_phone" id="edit_alt_phone">
+                  </div>
+                </div>
+                <!-- NOVO: NUIT na tab principal -->
+                <div class="col-md-4 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">NUIT</label>
+                    <input type="text" class="form-control" name="nuit" id="edit_nuit">
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="col-md-4 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Estado civil</label>
-                <select class="form-select" name="marital_status" id="edit_marital_status">
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" id="edit_email">
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Cidade</label>
+                    <input type="text" class="form-control" name="city" id="edit_city">
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="input-group input-group-outline">
+                  <label class="form-label">Endereço</label>
+                  <textarea class="form-control" name="address" id="edit_address"></textarea>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <div class="input-group input-group-outline">
+                    <label class="form-label">Profissão</label>
+                    <input type="text" class="form-control" name="profession" id="edit_profession">
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label d-block">Estado civil</label>
+                  <select class="form-select" name="marital_status" id="edit_marital_status">
+                    <option value="">— Seleccione —</option>
+                    <option value="solteiro">Solteiro(a)</option>
+                    <option value="casado">Casado(a)</option>
+                    <option value="divorciado">Divorciado(a)</option>
+                    <option value="viuvo">Viúvo(a)</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label d-block">Sexo</label>
+                  <select class="form-select" name="gender" id="edit_gender">
+                    <option value="">— Seleccione —</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="feminino">Feminino</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label d-block">Gestor responsável *</label>
+                <select class="form-select" name="manager" id="edit_manager">
                   <option value="">— Seleccione —</option>
-                  <option value="solteiro">Solteiro(a)</option>
-                  <option value="casado">Casado(a)</option>
-                  <option value="divorciado">Divorciado(a)</option>
-                  <option value="viuvo">Viúvo(a)</option>
+                  {% for g in gestores %}
+                    <option value="{{ g.id }}">{{ g.get_full_name|default:g.username }}</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
-            <div class="col-md-4 mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Sexo</label>
-                <select class="form-select" name="gender" id="edit_gender">
-                  <option value="">— Seleccione —</option>
-                  <option value="masculino">Masculino</option>
-                  <option value="feminino">Feminino</option>
-                  <option value="outro">Outro</option>
-                </select>
-              </div>
-            </div>
-          </div>
 
-          <div class="mb-3">
-            <div class="input-group input-group-outline">
-              <label class="form-label">Gestor responsável *</label>
-              <select class="form-select" name="manager" id="edit_manager">
-                <option value="">— Seleccione —</option>
-                {% for g in gestores %}
-                  <option value="{{ g.id }}">{{ g.get_full_name|default:g.username }}</option>
-                {% endfor %}
-              </select>
+            <!-- TAB KYC -->
+            <div class="tab-pane fade" id="tab-kyc" role="tabpanel" aria-labelledby="tab-kyc-tab">
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Tipo de Documento</label>
+                  <input type="text" class="form-control" name="id_type" id="edit_id_type"
+                         placeholder="BI, Passaporte, Carta de Condução, etc.">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Nº do Documento</label>
+                  <input type="text" class="form-control" name="id_number" id="edit_id_number">
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Data de Emissão</label>
+                  <input type="date" class="form-control" name="id_issue_date" id="edit_id_issue_date">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Validade</label>
+                  <input type="date" class="form-control" name="id_expiry_date" id="edit_id_expiry_date">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Notas KYC / Observações</label>
+                <textarea class="form-control" name="kyc_notes" id="edit_kyc_notes" rows="3"
+                          placeholder="Notas sobre verificação de morada, referências, risco, etc."></textarea>
+              </div>
+
             </div>
           </div>
 
@@ -243,13 +310,96 @@
     </div>
   </div>
 </div>
+
+<!-- MODAL DETALHE MEMBRO (view only) -->
+<div class="modal fade" id="memberDetailModal" tabindex="-1" aria-labelledby="memberDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="memberDetailModalLabel">Detalhes do Membro</h5>
+        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="mb-3">
+          <h6 class="mb-0" id="detail_member_name"></h6>
+          <small class="text-muted" id="detail_member_type"></small>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-xs text-uppercase text-muted mb-2">Contactos</h6>
+            <p class="mb-1"><strong>Telefone:</strong> <span id="detail_phone"></span></p>
+            <p class="mb-1"><strong>Telefone alt.:</strong> <span id="detail_alt_phone"></span></p>
+            <p class="mb-1"><strong>Email:</strong> <span id="detail_email"></span></p>
+            <p class="mb-1"><strong>Cidade:</strong> <span id="detail_city"></span></p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-xs text-uppercase text-muted mb-2">Informação geral</h6>
+            <p class="mb-1"><strong>Gestor:</strong> <span id="detail_manager"></span></p>
+            <p class="mb-1"><strong>Profissão:</strong> <span id="detail_profession"></span></p>
+            <p class="mb-1"><strong>Estado civil:</strong> <span id="detail_marital_status"></span></p>
+            <p class="mb-1"><strong>Sexo:</strong> <span id="detail_gender"></span></p>
+            <p class="mb-1"><strong>NUIT:</strong> <span id="detail_nuit"></span></p>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <h6 class="text-xs text-uppercase text-muted mb-2">Endereço</h6>
+          <p id="detail_address"></p>
+        </div>
+
+        <hr>
+
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-xs text-uppercase text-muted mb-2">Documento de Identificação</h6>
+            <p class="mb-1"><strong>Tipo:</strong> <span id="detail_id_type"></span></p>
+            <p class="mb-1"><strong>Número:</strong> <span id="detail_id_number"></span></p>
+            <p class="mb-1"><strong>Emissão:</strong> <span id="detail_id_issue_date"></span></p>
+            <p class="mb-1"><strong>Validade:</strong> <span id="detail_id_expiry_date"></span></p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-xs text-uppercase text-muted mb-2">Notas KYC</h6>
+            <p id="detail_kyc_notes"></p>
+          </div>
+        </div>
+
+        <hr>
+
+        <h6 class="text-xs text-uppercase text-muted mb-2">Empréstimos do Membro</h6>
+        <div class="table-responsive">
+          <table class="table table-sm" id="detail_loans_table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Principal</th>
+                <th>Status</th>
+                <th>Criação</th>
+                <th>Desembolso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- preenchido via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
 {% endblock content %}
 
 {% block extra_js %}
-  <!-- DataTables + Buttons -->
-  {% comment %} <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script> {% endcomment %}
-  {% comment %} <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script> {% endcomment %}
-
+  <!-- DataTables + Buttons (já tinhas) -->
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -258,12 +408,11 @@
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 
-  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // DataTable com Buttons
+      // DataTable
       var table = $('#members-table').DataTable({
         pageLength: 10,
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
@@ -281,7 +430,36 @@
         }
       });
 
-      // SweetAlert após criação (redirect com ?created=1)
+      // Função para actualizar estados das labels flutuantes
+      function refreshEditModalOutlineStates() {
+        $('#editMemberModal .input-group.input-group-outline .form-control, #editMemberModal .input-group.input-group-outline textarea').each(function () {
+          const wrapper = this.closest('.input-group.input-group-outline');
+          if (!wrapper) return;
+          if (this.value && this.value.toString().trim() !== '') {
+            wrapper.classList.add('is-filled');
+          } else {
+            wrapper.classList.remove('is-filled');
+          }
+        });
+      }
+
+      // Focus/blur
+      $(document).on('focus', '#editMemberModal .input-group.input-group-outline .form-control, #editMemberModal .input-group.input-group-outline textarea', function () {
+        const wrapper = this.closest('.input-group.input-group-outline');
+        if (wrapper) wrapper.classList.add('is-focused');
+      });
+      $(document).on('blur', '#editMemberModal .input-group.input-group-outline .form-control, #editMemberModal .input-group.input-group-outline textarea', function () {
+        const wrapper = this.closest('.input-group.input-group-outline');
+        if (!wrapper) return;
+        wrapper.classList.remove('is-focused');
+        if (this.value && this.value.toString().trim() !== '') {
+          wrapper.classList.add('is-filled');
+        } else {
+          wrapper.classList.remove('is-filled');
+        }
+      });
+
+      // SweetAlert após criação
       const params = new URLSearchParams(window.location.search);
       if (params.get('created') === '1') {
         Swal.fire({
@@ -293,8 +471,10 @@
         });
       }
 
-      // EDITAR - abrir modal com dados
-      $(document).on('click', '.btn-edit-member', function () {
+      // EDITAR - abrir modal com dados (inclui NUIT + KYC)
+      $(document).on('click', '.btn-edit-member', function (e) {
+        e.stopPropagation();  // não deixamos a linha abrir modal de detalhe
+
         const btn = $(this);
         $('#edit_member_id').val(btn.data('id'));
         $('#edit_first_name').val(btn.data('first-name'));
@@ -310,6 +490,22 @@
         $('#edit_marital_status').val(btn.data('marital-status') || '');
         $('#edit_gender').val(btn.data('gender') || '');
         $('#edit_manager').val(String(btn.data('manager') || ''));
+
+        $('#edit_nuit').val(btn.data('nuit') || '');
+        $('#edit_id_type').val(btn.data('id-type') || '');
+        $('#edit_id_number').val(btn.data('id-number') || '');
+        $('#edit_id_issue_date').val(btn.data('id-issue-date') || '');
+        $('#edit_id_expiry_date').val(btn.data('id-expiry-date') || '');
+        $('#edit_kyc_notes').val(btn.data('kyc-notes') || '');
+
+        // garantir que a tab "Dados principais" está activa ao abrir
+        var firstTab = document.querySelector('#editMemberTabs button[data-bs-target="#tab-dados"]');
+        if (firstTab) {
+          var tabObj = new bootstrap.Tab(firstTab);
+          tabObj.show();
+        }
+
+        refreshEditModalOutlineStates();
 
         var modalEl = document.getElementById('editMemberModal');
         var modal = new bootstrap.Modal(modalEl);
@@ -349,7 +545,9 @@
       });
 
       // DELETE / DESACTIVAR
-      $(document).on('click', '.btn-delete-member', function () {
+      $(document).on('click', '.btn-delete-member', function (e) {
+        e.stopPropagation();  // não abrir modal de detalhe
+
         const btn = $(this);
         const memberId = btn.data('id');
         const memberName = btn.data('name');
@@ -392,6 +590,74 @@
         });
       });
 
+      // CLICK NA LINHA -> MODAL DE DETALHE
+      $('#members-table tbody').on('click', 'tr.member-row', function (e) {
+        // se o clique foi num botão (editar/apagar), já tratámos acima
+        if ($(e.target).closest('.btn-edit-member, .btn-delete-member').length) {
+          return;
+        }
+        const memberId = $(this).data('id');
+        if (!memberId) return;
+
+        const url = "{% url 'core:member_detail_json' 0 %}".replace('/0/', '/' + memberId + '/');
+
+        $.get(url, function (resp) {
+          if (!resp.success) {
+            Swal.fire('Erro', resp.message || 'Falha ao carregar detalhes do membro.', 'error');
+            return;
+          }
+
+          const m = resp.member;
+
+          $('#detail_member_name').text((m.first_name || '') + ' ' + (m.last_name || ''));
+          $('#detail_member_type').text(m.is_company ? 'Empresa' : 'Pessoa');
+          $('#detail_phone').text(m.phone || '—');
+          $('#detail_alt_phone').text(m.alt_phone || '—');
+          $('#detail_email').text(m.email || '—');
+          $('#detail_city').text(m.city || '—');
+          $('#detail_address').text(m.address || '—');
+          $('#detail_profession').text(m.profession || '—');
+          $('#detail_marital_status').text(m.marital_status || '—');
+          $('#detail_gender').text(m.gender || '—');
+          $('#detail_nuit').text(m.nuit || '—');
+          $('#detail_manager').text(m.manager_name || '—');
+
+          $('#detail_id_type').text(m.id_type || '—');
+          $('#detail_id_number').text(m.id_number || '—');
+          $('#detail_id_issue_date').text(m.id_issue_date || '—');
+          $('#detail_id_expiry_date').text(m.id_expiry_date || '—');
+          $('#detail_kyc_notes').text(m.kyc_notes || '—');
+
+          // Loans
+          const tbody = $('#detail_loans_table tbody');
+          tbody.empty();
+          if (resp.loans && resp.loans.length > 0) {
+            resp.loans.forEach(function (l) {
+              const row = `
+                <tr>
+                  <td>${l.id}</td>
+                  <td>${l.loan_type || ''}</td>
+                  <td>${l.principal_amount}</td>
+                  <td>${l.status}</td>
+                  <td>${l.created_at || ''}</td>
+                  <td>${l.release_date || ''}</td>
+                </tr>
+              `;
+              tbody.append(row);
+            });
+          } else {
+            tbody.append('<tr><td colspan="6" class="text-center text-muted">Sem empréstimos registados.</td></tr>');
+          }
+
+          var modalEl = document.getElementById('memberDetailModal');
+          var modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        }).fail(function () {
+          Swal.fire('Erro', 'Falha ao carregar detalhes do membro.', 'error');
+        });
+      });
+
     });
   </script>
 {% endblock extra_js %}
+
