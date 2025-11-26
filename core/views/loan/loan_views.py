@@ -268,7 +268,32 @@ def confirm_loan(request, loan_id):
 
 #============================================================================================================
 #============================================================================================================
+@require_POST
+def reject_loan(request, loan_id):
+    """
+    Rejeita um empréstimo pendente.
+    Muda o status para 'cancelled'.
+    """
+    loan = get_object_or_404(Loan, pk=loan_id)
 
+    if loan.status != "pending":
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Apenas empréstimos pendentes podem ser rejeitados.",
+            },
+            status=400,
+        )
+
+    loan.status = "cancelled"
+    loan.save(update_fields=["status"])
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Empréstimo rejeitado com sucesso.",
+        }
+    )
 
 #============================================================================================================
 #============================================================================================================

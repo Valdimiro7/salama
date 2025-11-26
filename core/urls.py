@@ -11,7 +11,7 @@ from core.views.transaction.transaction_view import transaction_list
 from core.views.interest.interest_view import interest_type_list, create_interest_type, interest_calculator
 from core.views.loan.loan_views import new_loan
 from core.views.loan.loan_type_views import loan_type_list, create_loan_type, update_loan_type, toggle_loan_type
-from core.views.loan.loan_views import pending_loans_list, confirm_loan
+from core.views.loan.loan_views import pending_loans_list, confirm_loan, reject_loan
 from core.views.payments.loan_disbursement_views import loan_disbursement_list, register_disbursement
 from core.views.loan.active_loan import active_loans_list, active_loan_details
 from core.views.payments.loan_repayment_views import loan_repayment_list, register_repayment
@@ -84,6 +84,7 @@ urlpatterns = [
     
     path("loans/pending/", pending_loans_list, name="pending_loans"),
     path("loans/<int:loan_id>/confirm/", confirm_loan, name="confirm_loan"),
+    path("loans/<int:loan_id>/reject/", reject_loan, name="reject_loan"),
     
     path("loans/active/", active_loans_list, name="active_loans_list"),
      path("loans/active/<int:loan_id>/details/", active_loan_details, name="active_loan_details"),

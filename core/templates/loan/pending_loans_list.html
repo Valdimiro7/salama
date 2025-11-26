@@ -19,7 +19,7 @@
               <div>
                 <h6 class="mb-0">Empréstimos à espera de confirmação</h6>
                 <p class="text-sm text-muted mb-0">
-                  Ao confirmar, é criado automaticamente um pedido de pagamento para o cliente.
+                  Ao confirmar, o empréstimo passa para a fase de desembolso. Pode também rejeitar o pedido.
                 </p>
               </div>
             </div>
@@ -35,7 +35,7 @@
                     <th>Pagamento / ciclo</th>
                     <th>Nº períodos</th>
                     <th>Status</th>
-                    <th style="width: 140px;">Actions</th>
+                    <th style="width: 180px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -51,11 +51,16 @@
                     <td>{{ loan.payment_per_period|default:0|floatformat:2 }}</td>
                     <td>{{ loan.term_periods }}</td>
                     <td><span class="badge bg-warning text-dark">Pendente</span></td>
-                    <td>
+                    <td class="text-nowrap">
                       <button type="button"
-                              class="btn btn-outline-success btn-xs btn-confirm-loan">
+                              class="btn btn-outline-success btn-xs btn-confirm-loan me-1">
                         <i class="material-symbols-rounded" style="font-size:16px;">check_circle</i>
                         Confirmar
+                      </button>
+                      <button type="button"
+                              class="btn btn-outline-danger btn-xs btn-reject-loan">
+                        <i class="material-symbols-rounded" style="font-size:16px;">cancel</i>
+                        Rejeitar
                       </button>
                     </td>
                   </tr>
@@ -77,7 +82,6 @@
 
 {% block extra_js %}
   <!-- DataTables + Buttons -->
-
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -106,13 +110,14 @@
         }
       });
 
+      // CONFIRMAR EMPRÉSTIMO
       $(document).on('click', '.btn-confirm-loan', function () {
         const tr = $(this).closest('tr');
         const loanId = tr.data('id');
 
         Swal.fire({
           title: 'Confirmar Empréstimo?',
-          text: 'Será criado um pedido de pagamento para o cliente.',
+          text: 'O empréstimo será aprovado e poderá ser desembolsado.',
           icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Sim, confirmar',
@@ -143,6 +148,46 @@
           });
         });
       });
+
+      // REJEITAR EMPRÉSTIMO
+      $(document).on('click', '.btn-reject-loan', function () {
+        const tr = $(this).closest('tr');
+        const loanId = tr.data('id');
+
+        Swal.fire({
+          title: 'Rejeitar Empréstimo?',
+          text: 'Esta acção irá marcar o empréstimo como rejeitado/cancelado.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sim, rejeitar',
+          cancelButtonText: 'Cancelar'
+        }).then(result => {
+          if (!result.isConfirmed) return;
+
+          $.ajax({
+            url: "{% url 'core:reject_loan' 0 %}".replace('/0/', '/' + loanId + '/'),
+            type: "POST",
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            success: function (resp) {
+              if (resp.success) {
+                Swal.fire({
+                  icon: "success",
+                  title: "Rejeitado",
+                  text: resp.message,
+                  timer: 2000,
+                  showConfirmButton: false
+                }).then(() => window.location.reload());
+              } else {
+                Swal.fire("Erro", resp.message || "Falha ao rejeitar empréstimo.", "error");
+              }
+            },
+            error: function (xhr) {
+              Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao rejeitar empréstimo.", "error");
+            }
+          });
+        });
+      });
+
     });
   </script>
 {% endblock extra_js %}
