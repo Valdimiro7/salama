@@ -26,7 +26,11 @@ SECRET_KEY = 'django-insecure-)^vlvv#0c6ba^r(v)%i@hp#9f@wzeo3s-_*gfk)7bnji)w7e99
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost",
+    "salama.truenorth.co.mz",
+    "www.salama.truenorth.co.mz",
+]
+
 
 
 # Application definition
