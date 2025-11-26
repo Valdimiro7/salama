@@ -6,58 +6,126 @@
   <meta charset="utf-8">
   <title>{{ report_title }}</title>
   <style>
+    @page {
+      size: A4;
+      margin: 20mm 15mm 15mm 15mm;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: "Inter", "Arial", sans-serif;
       font-size: 11px;
       color: #111827;
     }
-    h1, h2, h3, h4, h5 {
-      margin: 0;
-      padding: 0;
-    }
+
     .header {
-      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
       margin-bottom: 10px;
-      padding-bottom: 6px;
     }
-    .header-title {
-      font-size: 16px;
-      font-weight: bold;
+
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-box img {
+      height: 28px;
+    }
+
+    .company-name {
+      font-size: 14px;
+      font-weight: 700;
       color: #064E3B;
     }
-    .meta {
+
+    .report-title-box {
+      text-align: right;
+    }
+
+    .report-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .report-subtitle {
       font-size: 10px;
       color: #6b7280;
     }
-    .meta span {
-      display: inline-block;
-      margin-right: 12px;
+
+    .info-panel {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 10px;
+      background: #f9fafb;
+      font-size: 10px;
     }
+
+    .info-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .info-item {
+      min-width: 120px;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .info-value {
+      color: #111827;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 8px;
+      page-break-inside: auto;
     }
+
     th, td {
       border: 1px solid #e5e7eb;
       padding: 4px 6px;
       text-align: left;
     }
+
     th {
       background: #f3f4f6;
       font-size: 10px;
       text-transform: uppercase;
+      color: #374151;
     }
-    tfoot td {
-      font-weight: bold;
+
+    tbody tr:nth-child(odd) {
+      background: #ffffff;
+    }
+
+    tbody tr:nth-child(even) {
       background: #f9fafb;
     }
+
+    tfoot td {
+      font-weight: 600;
+      background: #eef2ff;
+    }
+
     .text-right {
       text-align: right;
     }
+
     .text-center {
       text-align: center;
     }
+
     .badge {
       display: inline-block;
       padding: 1px 4px;
@@ -65,41 +133,129 @@
       font-size: 9px;
       color: #fff;
     }
+
     .badge-success { background: #16a34a; }
     .badge-danger { background: #dc2626; }
     .badge-warning { background: #f59e0b; color: #111827; }
     .badge-info { background: #0ea5e9; }
+    .badge-muted { background: #6b7280; }
+
     .mt-1 { margin-top: 4px; }
     .mt-2 { margin-top: 8px; }
+
+    .summary-box {
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      font-size: 10px;
+      background: #ecfdf3;
+    }
+
+    .summary-title {
+      font-weight: 700;
+      color: #065f46;
+      margin-bottom: 4px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .summary-label {
+      color: #374151;
+    }
+
+    .summary-value {
+      font-weight: 600;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      color: #111827;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Cabeçalho -->
+  <!-- ================= CABEÇALHO ================= -->
   <div class="header">
-    <div class="header-title">{{ report_title }}</div>
-    <div class="meta">
-      <span>Período:
-        {% if start_date %}{{ start_date }}{% else %}—{% endif %}
-        a
-        {% if end_date %}{{ end_date }}{% else %}—{% endif %}
-      </span>
+    <div class="logo-box">
+      <img src="{% static 'assets/img/logo-ct-dark.png' %}" alt="Logo">
+      <div>
+        <div class="company-name">Salama Investimento · Microcrédito</div>
+        <div style="font-size: 9px; color:#6b7280;">
+          Sistema de Gestão de Carteira · Relatórios
+        </div>
+      </div>
+    </div>
+    <div class="report-title-box">
+      <div class="report-title">{{ report_title }}</div>
+      <div class="report-subtitle">
+        {% now "Y-m-d H:i" %} · Gerado por
+        {{ generated_by.get_full_name|default:generated_by.username }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= INFO DO RELATÓRIO ================= -->
+  <div class="info-panel">
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Período</div>
+        <div class="info-value">
+          {% if start_date %}{{ start_date }}{% else %}—{% endif %}
+          a
+          {% if end_date %}{{ end_date }}{% else %}—{% endif %}
+        </div>
+      </div>
+
       {% if member %}
-        <span>Membro: {{ member.first_name }} {{ member.last_name }}</span>
+      <div class="info-item">
+        <div class="info-label">Membro</div>
+        <div class="info-value">
+          {{ member.first_name }} {{ member.last_name }}
+          {% if member.phone %} · {{ member.phone }}{% endif %}
+        </div>
+      </div>
       {% endif %}
+
       {% if account %}
-        <span>Conta: {{ account.name }}</span>
+      <div class="info-item">
+        <div class="info-label">Conta da Empresa</div>
+        <div class="info-value">
+          {{ account.name }}
+          {% if account.account_identifier %} · {{ account.account_identifier }}{% endif %}
+        </div>
+      </div>
       {% endif %}
+
       {% if user_obj %}
-        <span>Utilizador: {{ user_obj.get_full_name|default:user_obj.username }}</span>
+      <div class="info-item">
+        <div class="info-label">Utilizador (criado por)</div>
+        <div class="info-value">
+          {{ user_obj.get_full_name|default:user_obj.username }}
+        </div>
+      </div>
       {% endif %}
-      <span>Gerado por: {{ generated_by.get_full_name|default:generated_by.username }}</span>
-      <span>Data: {{ now|default:None }}</span>
+
+      <div class="info-item">
+        <div class="info-label">Tipo de Relatório</div>
+        <div class="info-value">
+          {{ report_title }}
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ================= RENDIMENTOS ================= -->
   {% if report_type == "incomes" %}
+    <div class="section-title">Detalhe de Rendimentos</div>
     <table>
       <thead>
         <tr>
@@ -108,6 +264,7 @@
           <th>Descrição</th>
           <th>Conta</th>
           <th class="text-right">Valor (MT)</th>
+          <th>Registado por</th>
         </tr>
       </thead>
       <tbody>
@@ -118,10 +275,17 @@
             <td>{{ r.description }}</td>
             <td>{{ r.company_account.name|default:"—" }}</td>
             <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+            <td>
+              {% if r.created_by %}
+                {{ r.created_by.get_full_name|default:r.created_by.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="5" class="text-center">Sem registos para o período seleccionado.</td>
+            <td colspan="6" class="text-center">Sem registos para o período seleccionado.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -129,13 +293,23 @@
         <tr>
           <td colspan="4" class="text-right">Total</td>
           <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
+          <td></td>
         </tr>
       </tfoot>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Resumo de Rendimentos</div>
+      <div class="summary-row">
+        <div class="summary-label">Total de Rendimentos no período</div>
+        <div class="summary-value">{{ total_amount|default:0|floatformat:2 }} MT</div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- ================= DESPESAS ================= -->
   {% if report_type == "expenses" %}
+    <div class="section-title">Detalhe de Despesas</div>
     <table>
       <thead>
         <tr>
@@ -144,6 +318,7 @@
           <th>Descrição</th>
           <th>Conta</th>
           <th class="text-right">Valor (MT)</th>
+          <th>Registado por</th>
         </tr>
       </thead>
       <tbody>
@@ -154,10 +329,17 @@
             <td>{{ r.description }}</td>
             <td>{{ r.company_account.name|default:"—" }}</td>
             <td class="text-right">{{ r.amount|floatformat:2 }}</td>
+            <td>
+              {% if r.created_by %}
+                {{ r.created_by.get_full_name|default:r.created_by.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="5" class="text-center">Sem registos para o período seleccionado.</td>
+            <td colspan="6" class="text-center">Sem registos para o período seleccionado.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -165,14 +347,23 @@
         <tr>
           <td colspan="4" class="text-right">Total</td>
           <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
+          <td></td>
         </tr>
       </tfoot>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Resumo de Despesas</div>
+      <div class="summary-row">
+        <div class="summary-label">Total de Despesas no período</div>
+        <div class="summary-value">{{ total_amount|default:0|floatformat:2 }} MT</div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- ================= SALDOS ================= -->
   {% if report_type == "balances" %}
-    <p class="mt-1">Snapshot dos saldos actuais das contas da empresa.</p>
+    <div class="section-title">Saldos actuais por Conta</div>
     <table>
       <thead>
         <tr>
@@ -199,6 +390,7 @@
 
   <!-- ================= EMPRÉSTIMOS ================= -->
   {% if report_type == "loans" %}
+    <div class="section-title">Empréstimos</div>
     <table>
       <thead>
         <tr>
@@ -209,6 +401,7 @@
           <th>Períodos</th>
           <th>Estado</th>
           <th>Criado em</th>
+          <th>Registado por</th>
         </tr>
       </thead>
       <tbody>
@@ -221,10 +414,17 @@
             <td>{{ r.term_periods }} {{ r.get_period_type_display }}</td>
             <td>{{ r.get_status_display|default:r.status }}</td>
             <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              {% if r.created_by %}
+                {{ r.created_by.get_full_name|default:r.created_by.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7" class="text-center">Sem empréstimos para o período seleccionado.</td>
+            <td colspan="8" class="text-center">Sem empréstimos para o período seleccionado.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -232,14 +432,27 @@
         <tr>
           <td colspan="3" class="text-right">Total Principal</td>
           <td class="text-right">{{ total_principal|default:0|floatformat:2 }}</td>
-          <td colspan="3"></td>
+          <td colspan="4"></td>
         </tr>
       </tfoot>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Resumo de Empréstimos</div>
+      <div class="summary-row">
+        <div class="summary-label">Total de Principal Aprovado</div>
+        <div class="summary-value">{{ total_principal|default:0|floatformat:2 }} MT</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">Número de Empréstimos</div>
+        <div class="summary-value">{{ rows|length }}</div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- ================= DESEMBOLSOS ================= -->
   {% if report_type == "disbursements" %}
+    <div class="section-title">Desembolsos</div>
     <table>
       <thead>
         <tr>
@@ -249,6 +462,7 @@
           <th>Conta</th>
           <th class="text-right">Valor (MT)</th>
           <th>Método</th>
+          <th>Registado por</th>
         </tr>
       </thead>
       <tbody>
@@ -260,10 +474,17 @@
             <td>{{ r.company_account.name }}</td>
             <td class="text-right">{{ r.amount|floatformat:2 }}</td>
             <td>{{ r.get_method_display|default:r.method }}</td>
+            <td>
+              {% if r.created_by %}
+                {{ r.created_by.get_full_name|default:r.created_by.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" class="text-center">Sem desembolsos para o período seleccionado.</td>
+            <td colspan="7" class="text-center">Sem desembolsos para o período seleccionado.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -271,14 +492,27 @@
         <tr>
           <td colspan="4" class="text-right">Total Desembolsado</td>
           <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
-          <td></td>
+          <td colspan="2"></td>
         </tr>
       </tfoot>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Resumo de Desembolsos</div>
+      <div class="summary-row">
+        <div class="summary-label">Total desembolsado</div>
+        <div class="summary-value">{{ total_amount|default:0|floatformat:2 }} MT</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">Número de registos</div>
+        <div class="summary-value">{{ rows|length }}</div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- ================= REEMBOLSOS ================= -->
   {% if report_type == "repayments" %}
+    <div class="section-title">Reembolsos</div>
     <table>
       <thead>
         <tr>
@@ -289,6 +523,7 @@
           <th class="text-right">Total (MT)</th>
           <th class="text-right">Juros</th>
           <th class="text-right">Principal</th>
+          <th>Registado por</th>
         </tr>
       </thead>
       <tbody>
@@ -301,26 +536,51 @@
             <td class="text-right">{{ r.amount|floatformat:2 }}</td>
             <td class="text-right">{{ r.interest_amount|floatformat:2 }}</td>
             <td class="text-right">{{ r.principal_amount|floatformat:2 }}</td>
+            <td>
+              {% if r.created_by %}
+                {{ r.created_by.get_full_name|default:r.created_by.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7" class="text-center">Sem reembolsos para o período seleccionado.</td>
+            <td colspan="8" class="text-center">Sem reembolsos para o período seleccionado.</td>
           </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="4" class="text-right">Totais</td>
+          <td colspan="4" class="text-right">Total Reembolsado</td>
           <td class="text-right">{{ total_amount|default:0|floatformat:2 }}</td>
           <td class="text-right">{{ total_interest|default:0|floatformat:2 }}</td>
           <td class="text-right">{{ total_principal|default:0|floatformat:2 }}</td>
+          <td></td>
         </tr>
       </tfoot>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Resumo de Reembolsos</div>
+      <div class="summary-row">
+        <div class="summary-label">Total reembolsado</div>
+        <div class="summary-value">{{ total_amount|default:0|floatformat:2 }} MT</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">Total em juros</div>
+        <div class="summary-value">{{ total_interest|default:0|floatformat:2 }} MT</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">Total em principal</div>
+        <div class="summary-value">{{ total_principal|default:0|floatformat:2 }} MT</div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- ================= TRANSACÇÕES ================= -->
   {% if report_type == "transactions" %}
+    <div class="section-title">Transacções</div>
     <table>
       <thead>
         <tr>
@@ -331,6 +591,7 @@
           <th class="text-right">Valor (MT)</th>
           <th class="text-right">Saldo Antes</th>
           <th class="text-right">Saldo Depois</th>
+          <th>Registado por</th>
         </tr>
       </thead>
       <tbody>
@@ -349,10 +610,17 @@
             <td class="text-right">{{ r.amount|floatformat:2 }}</td>
             <td class="text-right">{{ r.balance_before|floatformat:2 }}</td>
             <td class="text-right">{{ r.balance_after|floatformat:2 }}</td>
+            <td>
+              {% if r.created_by %}
+                {{ r.created_by.get_full_name|default:r.created_by.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7" class="text-center">Sem transacções para o período seleccionado.</td>
+            <td colspan="8" class="text-center">Sem transacções para o período seleccionado.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -360,24 +628,41 @@
         <tr>
           <td colspan="4" class="text-right">Total Entradas</td>
           <td class="text-right">{{ total_in|default:0|floatformat:2 }}</td>
-          <td colspan="2"></td>
+          <td colspan="3"></td>
         </tr>
         <tr>
           <td colspan="4" class="text-right">Total Saídas</td>
           <td class="text-right">{{ total_out|default:0|floatformat:2 }}</td>
-          <td colspan="2"></td>
+          <td colspan="3"></td>
         </tr>
         <tr>
           <td colspan="4" class="text-right">Saldo Líquido (Entradas - Saídas)</td>
           <td class="text-right">{{ net|default:0|floatformat:2 }}</td>
-          <td colspan="2"></td>
+          <td colspan="3"></td>
         </tr>
       </tfoot>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Resumo de Transacções</div>
+      <div class="summary-row">
+        <div class="summary-label">Total de Entradas</div>
+        <div class="summary-value">{{ total_in|default:0|floatformat:2 }} MT</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">Total de Saídas</div>
+        <div class="summary-value">{{ total_out|default:0|floatformat:2 }} MT</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">Saldo Líquido</div>
+        <div class="summary-value">{{ net|default:0|floatformat:2 }} MT</div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- ================= LUCROS ================= -->
   {% if report_type == "profits" %}
+    <div class="section-title">Resumo de Lucros</div>
     <table>
       <thead>
         <tr>
@@ -400,6 +685,20 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="summary-box">
+      <div class="summary-title">Análise Rápida</div>
+      <div class="summary-row">
+        <div class="summary-label">Margem (Lucro / Rendimentos)</div>
+        <div class="summary-value">
+          {% if total_incomes %}
+            {{ profit|divisibleby:total_incomes }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+    </div>
   {% endif %}
 
 </body>
