@@ -87,6 +87,7 @@ def active_loans_list(request):
         "kpi_total_principal": total_principal,
         "kpi_total_to_repay": total_to_repay,
         "kpi_total_interest": total_interest_sum,
+        "segment": "loans_active",
     }
     return render(request, "loan/active_loans_list.html", context)
 

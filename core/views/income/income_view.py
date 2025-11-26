@@ -26,7 +26,8 @@ def income_category_list(request):
     return render(
         request,
         "incomes/income_category_list.html",
-        {"categories": categories},
+        {"categories": categories,
+         "segment": "income_categories",},
     )
 
 #============================================================================================================
@@ -70,6 +71,7 @@ def income_list(request):
             "categories": categories,
             "company_accounts": company_accounts,
             "incomes": incomes,
+            "segment": "incomes",
         },
     )
 

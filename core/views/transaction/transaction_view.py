@@ -26,7 +26,8 @@ def transaction_list(request):
     return render(
         request,
         "transactions/transaction_list.html",
-        {"transactions": transactions},
+        {"transactions": transactions,
+         "segment": "transactions",},
     )
 
 

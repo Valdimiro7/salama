@@ -14,7 +14,8 @@ def account_type_list(request):
     return render(
         request,
         "accounts/account_type_list.html",
-        {"account_types": account_types},
+        {"account_types": account_types,
+         "segment": "account_types",},
     )
 
 #============================================================================================================
@@ -68,6 +69,7 @@ def client_account_list(request):
         "accounts/client_account_list.html",
         {
             "accounts": accounts,
+            "segment": "client_accounts",
             "members": members,
             "account_types": account_types,
         },
@@ -144,6 +146,7 @@ def company_account_list(request):
         "accounts/company_account_list.html",
         {
             "accounts": accounts,
+            "segment": "company_accounts",
             "account_types": account_types,
         },
     )

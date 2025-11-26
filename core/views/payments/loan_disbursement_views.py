@@ -74,6 +74,7 @@ def loan_disbursement_list(request):
     context = {
         "loans": loans,
         "company_accounts": company_accounts,
+        "segment": "loan_disbursements",
     }
     return render(request, "payments/loan_disbursement_list.html", context)
 

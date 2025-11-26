@@ -71,6 +71,7 @@ def loan_list_all(request):
 
     context = {
         "loans": loans,
+        "segment": "loans_all",
         "kpi_total_loans": total_loans,
         "kpi_total_principal": total_principal,
         "kpi_total_interest": total_interest,

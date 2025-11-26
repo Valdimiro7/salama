@@ -108,6 +108,7 @@ def loan_repayment_list(request):
 
     context = {
         "loans": loans,
+        "segment": "loan_repayments",
         "kpi_total_loans": total_loans,
         "kpi_total_principal": total_principal_all,
         "kpi_total_outstanding": total_outstanding_all,

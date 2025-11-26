@@ -14,7 +14,8 @@ def interest_type_list(request):
     return render(
         request,
         "interest/interest_type_list.html",
-        {"interest_types": interest_types},
+        {"interest_types": interest_types,
+         "segment": "interest_types",},
     )
 
 
@@ -72,7 +73,8 @@ def interest_calculator(request):
     return render(
         request,
         "interest/interest_calculator.html",
-        {"interest_types": interest_types},
+        {"interest_types": interest_types,
+         "segment": "interest_calculator",},
     )
 
 

@@ -37,6 +37,7 @@ def tuktuk_list(request):
         "kpi_available": kpi_available,
         "kpi_leased": kpi_leased,
         "kpi_maintenance": kpi_maintenance,
+        "segment": "txopela_fleet"
     }
     return render(request, "tuktuk/tuktuk_list.html", context)
 
@@ -75,6 +76,7 @@ def tuktuk_lease_contract_list(request):
         "available_tuktuks": available_tuktuks,
         "drivers": drivers,
         "company_accounts": company_accounts,
+        "segment": "txopela_contracts",
     }
     return render(request, "tuktuk/tuktuk_contract_list.html", context)
 
@@ -259,6 +261,7 @@ def tuktuk_lease_payment_list(request):
         "kpi_total_mes": kpi_total_mes,
         "active_contracts": active_contracts,
         "company_accounts": company_accounts,
+        "segment": "txopela_payments",
         "today": today,
     }
     return render(request, "tuktuk/tuktuk_lease_payment_list.html", context)

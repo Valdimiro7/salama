@@ -209,6 +209,7 @@ def new_loan(request):
                 "loan/new_loan.html",
                 {
                     "members": members,
+                    "segment": "loans_new",
                     "loan_types": loan_types,
                     "interest_types": interest_types,
                     "company_accounts": company_accounts,
@@ -222,6 +223,7 @@ def new_loan(request):
         "loan/new_loan.html",
         {
             "members": members,
+            "segment": "loans_new",
             "loan_types": loan_types,
             "interest_types": interest_types,
             "company_accounts": company_accounts,
@@ -242,7 +244,11 @@ def pending_loans_list(request):
         .filter(status="pending")
         .order_by("-id")
     )
-    context = {"loans": loans}
+    context = {
+        "loans": loans,
+        "segment": "loans_pending",
+        }
+    
     return render(request, "loan/pending_loans_list.html", context)
 
 #============================================================================================================

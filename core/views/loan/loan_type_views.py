@@ -14,6 +14,7 @@ def loan_type_list(request):
     loan_types = LoanType.objects.all().order_by("name")
     context = {
         "loan_types": loan_types,
+        "segment": "loan_types",
     }
     return render(request, "loan/loan_type_list.html", context)
 

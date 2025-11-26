@@ -22,7 +22,8 @@ def expense_category_list(request):
     return render(
         request,
         "expenses/expense_category_list.html",
-        {"categories": categories},
+        {"categories": categories,
+         "segment": "expense_categories",},
     )
 #============================================================================================================
 #============================================================================================================
@@ -67,6 +68,7 @@ def expense_list(request):
             "categories": categories,
             "company_accounts": company_accounts,
             "expenses": expenses,
+            "segment": "expenses",
         },
     )
 
