@@ -8,7 +8,7 @@
         <div class="card my-4">
           <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
             <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
-              <h6 class="text-white text-capitalize ps-3">Pagamentos Leasing · Tuk-Tuk</h6>
+              <h6 class="text-white text-capitalize ps-3">Pagamentos Leasing · Txopela</h6>
             </div>
           </div>
 
@@ -45,7 +45,9 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Histórico de pagamentos de leasing</h6>
-                  <p class="text-sm text-muted mb-0">Registe e acompanhe as transferências semanais dos motoristas para as contas da empresa.</p>
+                  <p class="text-sm text-muted mb-0">
+                    Registe e acompanhe as transferências semanais dos motoristas das Txopelas para as contas da empresa.
+                  </p>
                 </div>
                 <div>
                   <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-payment">
@@ -61,7 +63,7 @@
                     <tr>
                       <th>ID</th>
                       <th>Data</th>
-                      <th>Tuk-Tuk</th>
+                      <th>Txopela</th>
                       <th>Motorista</th>
                       <th>Contrato</th>
                       <th>Valor (MT)</th>
@@ -125,7 +127,7 @@
         <form id="addLeasePaymentForm">
           {% csrf_token %}
           <div class="modal-header">
-            <h5 class="modal-title" id="addLeasePaymentModalLabel">Registar Pagamento de Leasing</h5>
+            <h5 class="modal-title" id="addLeasePaymentModalLabel">Registar Pagamento de Leasing · Txopela</h5>
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -135,7 +137,9 @@
                 <select class="form-select" name="contract" id="id_contract">
                   <option value="">— Seleccione —</option>
                   {% for c in active_contracts %}
-                    <option value="{{ c.id }}" data-weekly="{{ c.weekly_rent|floatformat:2 }}">#{{ c.id }} · {{ c.tuktuk.plate_number }} · {{ c.driver.first_name }} {{ c.driver.last_name }}</option>
+                    <option value="{{ c.id }}" data-weekly="{{ c.weekly_rent|floatformat:2 }}">
+                      #{{ c.id }} · {{ c.tuktuk.plate_number }} · {{ c.driver.first_name }} {{ c.driver.last_name }}
+                    </option>
                   {% endfor %}
                 </select>
               </div>
@@ -239,7 +243,6 @@
       document.getElementById('btn-open-add-payment').addEventListener('click', function () {
         document.getElementById('addLeasePaymentForm').reset()
         document.getElementById('contract-weekly-hint').innerText = ''
-        // default hoje
         const todayStr = "{{ today|date:'Y-m-d' }}"
         document.getElementById('id_payment_date').value = todayStr
         paymentModal.show()

@@ -8,7 +8,7 @@
         <div class="card my-4">
           <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
             <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
-              <h6 class="text-white text-capitalize ps-3">Contratos de Leasing · Tuk-Tuk</h6>
+              <h6 class="text-white text-capitalize ps-3">Contratos de Leasing · Txopela</h6>
             </div>
           </div>
 
@@ -43,7 +43,7 @@
                 <div class="col-md-3 col-sm-6 mb-3">
                   <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
-                      <p class="text-sm text-muted mb-1">Tuk-Tuk em leasing</p>
+                      <p class="text-sm text-muted mb-1">Txopelas em leasing</p>
                       <h5 class="mb-0 text-primary">{{ kpi_tuktuks_in_leasing }}</h5>
                     </div>
                   </div>
@@ -53,7 +53,9 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Contratos de Leasing</h6>
-                  <p class="text-sm text-muted mb-0">Lista de contratos entre Tuk-Tuk e motoristas/cliente, com rendas semanais.</p>
+                  <p class="text-sm text-muted mb-0">
+                    Lista de contratos entre Txopelas e motoristas/clientes, com rendas semanais.
+                  </p>
                 </div>
                 <div>
                   <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-contract">
@@ -68,7 +70,7 @@
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Tuk-Tuk</th>
+                      <th>Txopela</th>
                       <th>Motorista</th>
                       <th>Renda semanal (MT)</th>
                       <th>Data início</th>
@@ -122,24 +124,26 @@
     {% include 'includes/sl_footer.html' %}
   </div>
 
-  <!-- MODAL: NOVO CONTRATO DE LEASING -->
+  <!-- MODAL: NOVO CONTRATO DE LEASING · TXOPELA -->
   <div class="modal fade" id="addContractModal" tabindex="-1" aria-labelledby="addContractModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <form id="addContractForm">
           {% csrf_token %}
           <div class="modal-header">
-            <h5 class="modal-title" id="addContractModalLabel">Novo Contrato de Leasing · Tuk-Tuk</h5>
+            <h5 class="modal-title" id="addContractModalLabel">Novo Contrato de Leasing · Txopela</h5>
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label class="form-label">Tuk-Tuk *</label>
+              <label class="form-label">Txopela *</label>
               <div class="input-group input-group-outline">
                 <select class="form-select" name="tuktuk" id="id_tuktuk">
                   <option value="">— Seleccione —</option>
                   {% for t in available_tuktuks %}
-                    <option value="{{ t.id }}" data-rent="{{ t.weekly_rent_default|floatformat:2 }}">{{ t.plate_number }} · {{ t.model|default:'' }}</option>
+                    <option value="{{ t.id }}" data-rent="{{ t.weekly_rent_default|floatformat:2 }}">
+                      {{ t.plate_number }} · {{ t.model|default:'' }}
+                    </option>
                   {% endfor %}
                 </select>
               </div>
@@ -173,7 +177,8 @@
             <div class="mb-3">
               <label class="form-label">Data de início *</label>
               <div class="input-group input-group-outline">
-                <input type="date" class="form-control" name="start_date" id="id_start_date" value="{{ now|date:'Y-m-d' }}" />
+                <input type="date" class="form-control" name="start_date" id="id_start_date"
+                       value="{{ now|date:'Y-m-d' }}" />
               </div>
             </div>
 
@@ -256,23 +261,22 @@
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
       })
-    
+
       const contractModalEl = document.getElementById('addContractModal')
       const contractModal = new bootstrap.Modal(contractModalEl)
-    
+
       // abrir modal
       document.getElementById('btn-open-add-contract').addEventListener('click', function () {
         document.getElementById('addContractForm').reset()
         document.getElementById('tuktuk-rent-hint').innerText = ''
-        // data default hoje
         const todayStr = "{{ now|date:'Y-m-d'|default:None }}"
         if (todayStr) {
           document.getElementById('id_start_date').value = todayStr
         }
         contractModal.show()
       })
-    
-      // quando escolhe Tuk-Tuk, mostrar renda padrão e preencher campo se vazio
+
+      // quando escolhe Txopela, mostrar renda padrão e preencher campo se vazio
       $('#id_tuktuk').on('change', function () {
         const opt = this.selectedOptions[0]
         if (!opt) {
@@ -281,7 +285,7 @@
         }
         const rent = opt.getAttribute('data-rent')
         if (rent) {
-          $('#tuktuk-rent-hint').text('Renda semanal padrão deste Tuk-Tuk: MT ' + rent)
+          $('#tuktuk-rent-hint').text('Renda semanal padrão desta Txopela: MT ' + rent)
           const rentInput = document.getElementById('id_weekly_rent')
           if (rentInput.value === '') {
             rentInput.value = rent
@@ -290,24 +294,24 @@
           $('#tuktuk-rent-hint').text('')
         }
       })
-    
+
       // submit form via AJAX
       $('#addContractForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const tuktuk = $('#id_tuktuk').val()
         const driver = $('#id_driver').val()
         const companyAcc = $('#id_company_account').val()
         const startDate = $('#id_start_date').val()
         const weeklyRent = $('#id_weekly_rent').val().trim()
-    
+
         if (!tuktuk || !driver || !companyAcc || !startDate || !weeklyRent) {
           Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
           return
         }
-    
+
         const formData = $(this).serialize()
-    
+
         $.ajax({
           url: "{% url 'core:create_tuktuk_lease_contract' %}",
           type: 'POST',

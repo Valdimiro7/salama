@@ -22,7 +22,7 @@ from core.models import (
 @login_required
 def tuktuk_list(request):
     """
-    Lista de Tuk-Tuk (frota) + modal para criar novo Tuk-Tuk.
+    Lista de Txopelas (frota) + modal para criar nova Txopela.
     """
     tuktuks = TukTuk.objects.all().order_by("plate_number")
 
@@ -37,7 +37,7 @@ def tuktuk_list(request):
         "kpi_available": kpi_available,
         "kpi_leased": kpi_leased,
         "kpi_maintenance": kpi_maintenance,
-        "segment": "txopela_fleet"
+        "segment": "txopela_fleet",
     }
     return render(request, "tuktuk/tuktuk_list.html", context)
 
@@ -46,7 +46,7 @@ def tuktuk_list(request):
 @login_required
 def tuktuk_lease_contract_list(request):
     """
-    Lista de contratos de leasing Tuk-Tuk + modal para novo contrato.
+    Lista de contratos de leasing de Txopelas + modal para novo contrato.
     """
     contracts = (
         TukTukLeaseContract.objects
@@ -60,7 +60,12 @@ def tuktuk_lease_contract_list(request):
     kpi_weekly_sum = contracts.filter(status="active").aggregate(
         total=Sum("weekly_rent")
     )["total"] or Decimal("0")
-    kpi_tuktuks_in_leasing = contracts.filter(status="active").values("tuktuk_id").distinct().count()
+    kpi_tuktuks_in_leasing = (
+        contracts.filter(status="active")
+        .values("tuktuk_id")
+        .distinct()
+        .count()
+    )
 
     # Para o modal de novo contrato:
     available_tuktuks = TukTuk.objects.filter(status="available").order_by("plate_number")
@@ -86,7 +91,7 @@ def tuktuk_lease_contract_list(request):
 @db_transaction.atomic
 def create_tuktuk(request):
     """
-    Cria um novo Tuk-Tuk (via AJAX).
+    Cria uma nova Txopela (via AJAX).
     """
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Método inválido."}, status=405)
@@ -100,7 +105,10 @@ def create_tuktuk(request):
     notes = request.POST.get("notes", "").strip()
 
     if not plate_number:
-        return JsonResponse({"success": False, "message": "Informe a matrícula do Tuk-Tuk."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Informe a matrícula da Txopela."},
+            status=400,
+        )
 
     # validar valor
     try:
@@ -108,7 +116,10 @@ def create_tuktuk(request):
         if weekly_rent_dec < 0:
             raise ValueError
     except Exception:
-        return JsonResponse({"success": False, "message": "Valor de renda semanal inválido."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Valor de renda semanal inválido."},
+            status=400,
+        )
 
     # validar ano (opcional)
     year_val = None
@@ -116,7 +127,10 @@ def create_tuktuk(request):
         try:
             year_val = int(year)
         except ValueError:
-            return JsonResponse({"success": False, "message": "Ano inválido."}, status=400)
+            return JsonResponse(
+                {"success": False, "message": "Ano inválido."},
+                status=400,
+            )
 
     # criar
     TukTuk.objects.create(
@@ -129,7 +143,9 @@ def create_tuktuk(request):
         notes=notes or None,
     )
 
-    return JsonResponse({"success": True, "message": "Tuk-Tuk criado com sucesso."})
+    return JsonResponse(
+        {"success": True, "message": "Txopela criada com sucesso."}
+    )
 
 #========================================================================================================================
 #========================================================================================================================
@@ -137,7 +153,7 @@ def create_tuktuk(request):
 @db_transaction.atomic
 def create_tuktuk_lease_contract(request):
     """
-    Cria um novo contrato de leasing Tuk-Tuk (via AJAX).
+    Cria um novo contrato de leasing de Txopela (via AJAX).
     """
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Método inválido."}, status=405)
@@ -153,28 +169,40 @@ def create_tuktuk_lease_contract(request):
 
     if not tuktuk_id or not driver_id or not company_account_id or not start_date_str or not weekly_rent_raw:
         return JsonResponse(
-            {"success": False, "message": "Preencha Tuk-Tuk, motorista, conta, data de início e renda semanal."},
+            {
+                "success": False,
+                "message": "Preencha Txopela, motorista, conta, data de início e renda semanal.",
+            },
             status=400,
         )
 
     # validar / obter entidades
     tuktuk = get_object_or_404(TukTuk, pk=tuktuk_id)
     driver = get_object_or_404(Member, pk=driver_id)
-    company_account = get_object_or_404(CompanyAccount, pk=company_account_id, is_active=True)
+    company_account = get_object_or_404(
+        CompanyAccount,
+        pk=company_account_id,
+        is_active=True,
+    )
 
     # datas
-    from datetime import datetime
     try:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     except ValueError:
-        return JsonResponse({"success": False, "message": "Data de início inválida."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Data de início inválida."},
+            status=400,
+        )
 
     end_date = None
     if end_date_str:
         try:
             end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
-            return JsonResponse({"success": False, "message": "Data de fim inválida."}, status=400)
+            return JsonResponse(
+                {"success": False, "message": "Data de fim inválida."},
+                status=400,
+            )
 
     # weekly rent
     try:
@@ -182,7 +210,10 @@ def create_tuktuk_lease_contract(request):
         if weekly_rent <= 0:
             raise ValueError
     except Exception:
-        return JsonResponse({"success": False, "message": "Renda semanal inválida."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Renda semanal inválida."},
+            status=400,
+        )
 
     # dia de pagamento (opcional)
     payment_weekday = None
@@ -193,7 +224,10 @@ def create_tuktuk_lease_contract(request):
                 raise ValueError
             payment_weekday = pw
         except ValueError:
-            return JsonResponse({"success": False, "message": "Dia de pagamento inválido."}, status=400)
+            return JsonResponse(
+                {"success": False, "message": "Dia de pagamento inválido."},
+                status=400,
+            )
 
     contract = TukTukLeaseContract.objects.create(
         tuktuk=tuktuk,
@@ -208,18 +242,21 @@ def create_tuktuk_lease_contract(request):
         notes=notes or None,
     )
 
-    # opcionalmente marcar TukTuk como leased
+    # opcionalmente marcar Txopela como leased
     tuktuk.status = "leased"
     tuktuk.save(update_fields=["status"])
 
-    return JsonResponse({"success": True, "message": f"Contrato #{contract.id} criado com sucesso."})
+    return JsonResponse(
+        {"success": True, "message": f"Contrato #{contract.id} criado com sucesso."}
+    )
+
 #========================================================================================================================
 #========================================================================================================================
 
 @login_required
 def tuktuk_lease_payment_list(request):
     """
-    Lista de pagamentos de leasing de Tuk-Tuk +
+    Lista de pagamentos de leasing de Txopelas +
     modal para registar novo pagamento.
     """
 
@@ -265,13 +302,14 @@ def tuktuk_lease_payment_list(request):
         "today": today,
     }
     return render(request, "tuktuk/tuktuk_lease_payment_list.html", context)
+
 #========================================================================================================================
 #========================================================================================================================
 @login_required
 @db_transaction.atomic
 def create_tuktuk_lease_payment(request):
     """
-    Regista um pagamento de leasing de Tuk-Tuk (via AJAX).
+    Regista um pagamento de leasing de Txopela (via AJAX).
     Cria movimento de entrada na conta da empresa + Transaction.
     """
     if request.method != "POST":
@@ -286,18 +324,28 @@ def create_tuktuk_lease_payment(request):
 
     if not contract_id or not company_account_id or not payment_date_str or not amount_raw:
         return JsonResponse(
-            {"success": False, "message": "Preencha contrato, conta da empresa, data e valor."},
+            {
+                "success": False,
+                "message": "Preencha contrato, conta da empresa, data e valor.",
+            },
             status=400,
         )
 
     contract = get_object_or_404(TukTukLeaseContract, pk=contract_id)
-    company_account = get_object_or_404(CompanyAccount, pk=company_account_id, is_active=True)
+    company_account = get_object_or_404(
+        CompanyAccount,
+        pk=company_account_id,
+        is_active=True,
+    )
 
     # data
     try:
         payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d").date()
     except ValueError:
-        return JsonResponse({"success": False, "message": "Data de pagamento inválida."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Data de pagamento inválida."},
+            status=400,
+        )
 
     # valor
     try:
@@ -305,7 +353,10 @@ def create_tuktuk_lease_payment(request):
         if amount <= 0:
             raise ValueError
     except Exception:
-        return JsonResponse({"success": False, "message": "Valor inválido."}, status=400)
+        return JsonResponse(
+            {"success": False, "message": "Valor inválido."},
+            status=400,
+        )
 
     # Saldo antes (antes de somar o pagamento)
     balance_before = company_account.balance
@@ -314,7 +365,7 @@ def create_tuktuk_lease_payment(request):
     # Criar pagamento (agora com driver)
     payment = TukTukLeasePayment.objects.create(
         contract=contract,
-        driver=contract.driver,          # <--- importante
+        driver=contract.driver,
         company_account=company_account,
         payment_date=payment_date,
         amount=amount,
@@ -333,7 +384,7 @@ def create_tuktuk_lease_payment(request):
         source_type="tuktuk_lease_payment",
         source_id=payment.id,
         tx_date=payment_date,
-        description=f"Leasing Tuk-Tuk · Contrato #{contract.id} · {contract.tuktuk.plate_number}",
+        description=f"Leasing Txopela · Contrato #{contract.id} · {contract.tuktuk.plate_number}",
         amount=amount,
         balance_before=balance_before,
         balance_after=balance_after,
@@ -344,11 +395,6 @@ def create_tuktuk_lease_payment(request):
     return JsonResponse(
         {"success": True, "message": "Pagamento de leasing registado com sucesso."}
     )
-
-
-#========================================================================================================================
-#========================================================================================================================
-
 
 #========================================================================================================================
 #========================================================================================================================

@@ -8,7 +8,7 @@
         <div class="card my-4">
           <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
             <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
-              <h6 class="text-white text-capitalize ps-3">Frota de Tuk-Tuk</h6>
+              <h6 class="text-white text-capitalize ps-3">Frota de Txopelas</h6>
             </div>
           </div>
 
@@ -19,7 +19,7 @@
                 <div class="col-md-3 col-sm-6 mb-3">
                   <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
-                      <p class="text-sm text-muted mb-1">Total de Tuk-Tuk</p>
+                      <p class="text-sm text-muted mb-1">Total de Txopelas</p>
                       <h4 class="mb-0">{{ kpi_total }}</h4>
                     </div>
                   </div>
@@ -52,13 +52,15 @@
 
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                  <h6 class="mb-0">Lista de Tuk-Tuk</h6>
-                  <p class="text-sm text-muted mb-0">Gere a frota de Tuk-Tuk utilizados para contratos de leasing.</p>
+                  <h6 class="mb-0">Lista de Txopelas</h6>
+                  <p class="text-sm text-muted mb-0">
+                    Gere a frota de Txopelas utilizadas para contratos de leasing.
+                  </p>
                 </div>
                 <div>
                   <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-tuktuk">
                     <i class="material-symbols-rounded me-1" style="font-size:18px;">add</i>
-                    Adicionar Tuk-Tuk
+                    Adicionar Txopela
                   </button>
                 </div>
               </div>
@@ -110,14 +112,14 @@
     {% include 'includes/sl_footer.html' %}
   </div>
 
-  <!-- MODAL: ADICIONAR TUK-TUK -->
+  <!-- MODAL: ADICIONAR TXOPELA -->
   <div class="modal fade" id="addTukTukModal" tabindex="-1" aria-labelledby="addTukTukModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <form id="addTukTukForm">
           {% csrf_token %}
           <div class="modal-header">
-            <h5 class="modal-title" id="addTukTukModalLabel">Adicionar Tuk-Tuk</h5>
+            <h5 class="modal-title" id="addTukTukModalLabel">Adicionar Txopela</h5>
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -217,28 +219,28 @@
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
       })
-    
+
       const addModalEl = document.getElementById('addTukTukModal')
       const addModal = new bootstrap.Modal(addModalEl)
-    
+
       // abrir modal
       document.getElementById('btn-open-add-tuktuk').addEventListener('click', function () {
         document.getElementById('addTukTukForm').reset()
         addModal.show()
       })
-    
+
       // submit form via AJAX
       $('#addTukTukForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const plate = $('#id_plate_number').val().trim()
         if (!plate) {
-          Swal.fire('Validação', 'Informe a matrícula do Tuk-Tuk.', 'warning')
+          Swal.fire('Validação', 'Informe a matrícula da Txopela.', 'warning')
           return
         }
-    
+
         const formData = $(this).serialize()
-    
+
         $.ajax({
           url: "{% url 'core:create_tuktuk' %}",
           type: 'POST',
@@ -249,17 +251,17 @@
               addModal.hide()
               Swal.fire({
                 icon: 'success',
-                title: 'Tuk-Tuk criado',
+                title: 'Txopela criada',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => window.location.reload())
             } else {
-              Swal.fire('Erro', resp.message || 'Falha ao criar Tuk-Tuk.', 'error')
+              Swal.fire('Erro', resp.message || 'Falha ao criar Txopela.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar Tuk-Tuk.', 'error')
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar Txopela.', 'error')
           }
         })
       })
