@@ -83,7 +83,10 @@ def add_member(request):
     return render(
         request,
         "member/add_member.html",
-        {"gestores": gestores, "errors": errors, "form_data": form_data},
+        {"gestores": gestores, 
+         "errors": errors, 
+         "form_data": form_data,
+         "segment": "member_add",},
     )
 
 
@@ -99,6 +102,7 @@ def member_list(request):
         {
             "members": members,
             "gestores": gestores,
+            "segment": "members_list",
         },
     )
 

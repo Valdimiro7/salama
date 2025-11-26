@@ -1,164 +1,145 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12 col-xl-10 mx-auto">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Tipos de Empréstimos</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12 col-xl-10 mx-auto">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Tipos de Empréstimos</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Configuração de Tipos de Empréstimos</h6>
-                <p class="text-sm text-muted mb-0">
-                  Defina os tipos de empréstimos que poderão ser usados ao criar novos contratos.
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Configuração de Tipos de Empréstimos</h6>
+                  <p class="text-sm text-muted mb-0">Defina os tipos de empréstimos que poderão ser usados ao criar novos contratos.</p>
+                </div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addLoanTypeModal">
+                  <i class="material-symbols-rounded me-1">add</i>
+                  Novo Tipo de Empréstimo
+                </button>
               </div>
-              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addLoanTypeModal">
-                <i class="material-symbols-rounded me-1">add</i>
-                Novo Tipo de Empréstimo
-              </button>
-            </div>
 
-            <div class="table-responsive">
-              <table id="loan-types-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Descrição</th>
-                    <th>Status</th>
-                    <th style="width: 150px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for lt in loan_types %}
-                  <tr data-id="{{ lt.id }}"
-                      data-name="{{ lt.name|escape }}"
-                      data-description="{{ lt.description|default_if_none:''|escape }}"
-                      data-active="{{ lt.is_active|yesno:'1,0' }}">
-                    <td>{{ lt.id }}</td>
-                    <td>{{ lt.name }}</td>
-                    <td>{{ lt.description|default:"—" }}</td>
-                    <td>
-                      {% if lt.is_active %}
-                        <span class="badge bg-success text-white">Activo</span>
-                      {% else %}
-                        <span class="badge bg-secondary text-white">Inactivo</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      <button type="button" class="btn btn-outline-primary btn-xs btn-edit-loan-type">
-                        <i class="material-symbols-rounded" style="font-size: 16px;">edit</i>
-                      </button>
-                      {% if lt.is_active %}
-                        <button type="button" class="btn btn-outline-danger btn-xs btn-toggle-loan-type ms-1">
-                          <i class="material-symbols-rounded" style="font-size: 16px;">block</i>
-                        </button>
-                      {% else %}
-                        <button type="button" class="btn btn-outline-success btn-xs btn-toggle-loan-type ms-1">
-                          <i class="material-symbols-rounded" style="font-size: 16px;">check_circle</i>
-                        </button>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table id="loan-types-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nome</th>
+                      <th>Descrição</th>
+                      <th>Status</th>
+                      <th style="width: 150px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for lt in loan_types %}
+                      <tr data-id="{{ lt.id }}" data-name="{{ lt.name|escape }}" data-description="{{ lt.description|default_if_none:''|escape }}" data-active="{{ lt.is_active|yesno:'1,0' }}">
+                        <td>{{ lt.id }}</td>
+                        <td>{{ lt.name }}</td>
+                        <td>{{ lt.description|default:'—' }}</td>
+                        <td>
+                          {% if lt.is_active %}
+                            <span class="badge bg-success text-white">Activo</span>
+                          {% else %}
+                            <span class="badge bg-secondary text-white">Inactivo</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <button type="button" class="btn btn-outline-primary btn-xs btn-edit-loan-type"><i class="material-symbols-rounded" style="font-size: 16px;">edit</i></button>
+                          {% if lt.is_active %}
+                            <button type="button" class="btn btn-outline-danger btn-xs btn-toggle-loan-type ms-1"><i class="material-symbols-rounded" style="font-size: 16px;">block</i></button>
+                          {% else %}
+                            <button type="button" class="btn btn-outline-success btn-xs btn-toggle-loan-type ms-1"><i class="material-symbols-rounded" style="font-size: 16px;">check_circle</i></button>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
+    </div>
 
+    {% include 'includes/sl_footer.html' %}
+  </div>
+
+  <!-- MODAL: NOVO TIPO DE EMPRÉSTIMO -->
+  <div class="modal fade" id="addLoanTypeModal" tabindex="-1" aria-labelledby="addLoanTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addLoanTypeForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addLoanTypeModalLabel">Novo Tipo de Empréstimo</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Nome do Tipo *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="name" id="id_new_loan_type_name" placeholder="Ex: Empréstimo Geral, Empréstimo Diário" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Descrição</label>
+              <div class="input-group input-group-outline">
+                <textarea class="form-control" rows="3" name="description" id="id_new_loan_type_description" placeholder="Notas sobre este tipo de empréstimo (condições, uso, etc.)."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
-  {% include "includes/sl_footer.html" %}
-</div>
+  <!-- MODAL: EDITAR TIPO DE EMPRÉSTIMO -->
+  <div class="modal fade" id="editLoanTypeModal" tabindex="-1" aria-labelledby="editLoanTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editLoanTypeForm">
+          {% csrf_token %}
+          <input type="hidden" name="loan_type_id" id="id_edit_loan_type_id" />
+          <div class="modal-header">
+            <h5 class="modal-title" id="editLoanTypeModalLabel">Editar Tipo de Empréstimo</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Nome do Tipo *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="name" id="id_edit_loan_type_name" />
+              </div>
+            </div>
 
-<!-- MODAL: NOVO TIPO DE EMPRÉSTIMO -->
-<div class="modal fade" id="addLoanTypeModal" tabindex="-1" aria-labelledby="addLoanTypeModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="addLoanTypeForm">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addLoanTypeModalLabel">Novo Tipo de Empréstimo</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <div class="mb-3">
-            <label class="form-label">Nome do Tipo *</label>
-            <div class="input-group input-group-outline">
-              <input type="text" class="form-control" name="name" id="id_new_loan_type_name" placeholder="Ex: Empréstimo Geral, Empréstimo Diário">
+            <div class="mb-3">
+              <label class="form-label">Descrição</label>
+              <div class="input-group input-group-outline">
+                <textarea class="form-control" rows="3" name="description" id="id_edit_loan_type_description"></textarea>
+              </div>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Descrição</label>
-            <div class="input-group input-group-outline">
-              <textarea class="form-control" rows="3" name="description" id="id_new_loan_type_description"
-                        placeholder="Notas sobre este tipo de empréstimo (condições, uso, etc.)."></textarea>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Actualizar</button>
           </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-
-<!-- MODAL: EDITAR TIPO DE EMPRÉSTIMO -->
-<div class="modal fade" id="editLoanTypeModal" tabindex="-1" aria-labelledby="editLoanTypeModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="editLoanTypeForm">
-        {% csrf_token %}
-        <input type="hidden" name="loan_type_id" id="id_edit_loan_type_id">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editLoanTypeModalLabel">Editar Tipo de Empréstimo</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <div class="mb-3">
-            <label class="form-label">Nome do Tipo *</label>
-            <div class="input-group input-group-outline">
-              <input type="text" class="form-control" name="name" id="id_edit_loan_type_name">
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Descrição</label>
-            <div class="input-group input-group-outline">
-              <textarea class="form-control" rows="3" name="description" id="id_edit_loan_type_description"></textarea>
-            </div>
-          </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Actualizar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
   <!-- DataTables + Buttons -->
@@ -178,113 +159,116 @@
     document.addEventListener('DOMContentLoaded', function () {
       const table = $('#loan-types-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[1, 'asc']],
         dom: 'lBfrtip',
         buttons: [
-          { extend: 'copy',  text: 'Copy',  className: 'btn btn-sm btn-primary' },
-          { extend: 'csv',   text: 'CSV',   className: 'btn btn-sm btn-success' },
+          { extend: 'copy', text: 'Copy', className: 'btn btn-sm btn-primary' },
+          { extend: 'csv', text: 'CSV', className: 'btn btn-sm btn-success' },
           { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-warning' },
-          { extend: 'pdf',   text: 'PDF',   className: 'btn btn-sm btn-danger' },
+          { extend: 'pdf', text: 'PDF', className: 'btn btn-sm btn-danger' },
           { extend: 'print', text: 'Print', className: 'btn btn-sm btn-info' }
         ],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
+      })
+    
       // ---------- Criar Tipo ----------
       $('#addLoanTypeForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const name = $('#id_new_loan_type_name').val().trim();
+        e.preventDefault()
+    
+        const name = $('#id_new_loan_type_name').val().trim()
         if (!name) {
-          Swal.fire('Validação', 'O nome do tipo de empréstimo é obrigatório.', 'warning');
-          return;
+          Swal.fire('Validação', 'O nome do tipo de empréstimo é obrigatório.', 'warning')
+          return
         }
-
+    
         $.ajax({
           url: "{% url 'core:create_loan_type' %}",
-          type: "POST",
+          type: 'POST',
           data: $(this).serialize(),
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Criado",
+                icon: 'success',
+                title: 'Criado',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
-              }).then(() => window.location.reload());
+              }).then(() => window.location.reload())
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao criar tipo de empréstimo.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao criar tipo de empréstimo.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar tipo de empréstimo.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de empréstimo.', 'error')
           }
-        });
-      });
-
+        })
+      })
+    
       // ---------- Abrir modal Edit ----------
       $(document).on('click', '.btn-edit-loan-type', function () {
-        const tr = $(this).closest('tr');
-        const id = tr.data('id');
-        const name = tr.data('name');
-        const description = tr.data('description');
-
-        $('#id_edit_loan_type_id').val(id);
-        $('#id_edit_loan_type_name').val(name);
-        $('#id_edit_loan_type_description').val(description);
-
-        $('#editLoanTypeModal').modal('show');
-      });
-
+        const tr = $(this).closest('tr')
+        const id = tr.data('id')
+        const name = tr.data('name')
+        const description = tr.data('description')
+    
+        $('#id_edit_loan_type_id').val(id)
+        $('#id_edit_loan_type_name').val(name)
+        $('#id_edit_loan_type_description').val(description)
+    
+        $('#editLoanTypeModal').modal('show')
+      })
+    
       // ---------- Submeter Edit ----------
       $('#editLoanTypeForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const id = $('#id_edit_loan_type_id').val();
-        const name = $('#id_edit_loan_type_name').val().trim();
+        e.preventDefault()
+    
+        const id = $('#id_edit_loan_type_id').val()
+        const name = $('#id_edit_loan_type_name').val().trim()
         if (!name) {
-          Swal.fire('Validação', 'O nome do tipo de empréstimo é obrigatório.', 'warning');
-          return;
+          Swal.fire('Validação', 'O nome do tipo de empréstimo é obrigatório.', 'warning')
+          return
         }
-
+    
         $.ajax({
           url: "{% url 'core:update_loan_type' 0 %}".replace('/0/', '/' + id + '/'),
-          type: "POST",
+          type: 'POST',
           data: $(this).serialize(),
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Actualizado",
+                icon: 'success',
+                title: 'Actualizado',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
-              }).then(() => window.location.reload());
+              }).then(() => window.location.reload())
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao actualizar tipo de empréstimo.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao actualizar tipo de empréstimo.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao actualizar tipo de empréstimo.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar tipo de empréstimo.', 'error')
           }
-        });
-      });
-
+        })
+      })
+    
       // ---------- Activar / Desactivar ----------
       $(document).on('click', '.btn-toggle-loan-type', function () {
-        const tr = $(this).closest('tr');
-        const id = tr.data('id');
-        const name = tr.data('name');
-        const active = tr.data('active') === 1 || tr.data('active') === '1';
-
-        const actionText = active ? 'desactivar' : 'activar';
-
+        const tr = $(this).closest('tr')
+        const id = tr.data('id')
+        const name = tr.data('name')
+        const active = tr.data('active') === 1 || tr.data('active') === '1'
+    
+        const actionText = active ? 'desactivar' : 'activar'
+    
         Swal.fire({
           title: 'Confirmar',
           text: `Deseja ${actionText} o tipo de empréstimo "${name}"?`,
@@ -292,32 +276,32 @@
           showCancelButton: true,
           confirmButtonText: 'Sim',
           cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (!result.isConfirmed) return;
-
+        }).then((result) => {
+          if (!result.isConfirmed) return
+    
           $.ajax({
             url: "{% url 'core:toggle_loan_type' 0 %}".replace('/0/', '/' + id + '/'),
-            type: "POST",
-            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            type: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
             success: function (resp) {
               if (resp.success) {
                 Swal.fire({
-                  icon: "success",
-                  title: "Actualizado",
+                  icon: 'success',
+                  title: 'Actualizado',
                   text: resp.message,
                   timer: 2000,
                   showConfirmButton: false
-                }).then(() => window.location.reload());
+                }).then(() => window.location.reload())
               } else {
-                Swal.fire("Erro", resp.message || "Falha ao actualizar tipo de empréstimo.", "error");
+                Swal.fire('Erro', resp.message || 'Falha ao actualizar tipo de empréstimo.', 'error')
               }
             },
             error: function (xhr) {
-              Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao actualizar tipo de empréstimo.", "error");
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar tipo de empréstimo.', 'error')
             }
-          });
-        });
-      });
-    });
+          })
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

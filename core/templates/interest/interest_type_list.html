@@ -1,201 +1,192 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Tipos de Juros</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Tipos de Juros</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Configuração de Tipos de Juros</h6>
-                <p class="text-sm text-muted mb-0">
-                  Defina taxas fixas usadas nos empréstimos (ex: 30% por mês ou por 30 dias, aplicados sobre o saldo em dívida).
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Configuração de Tipos de Juros</h6>
+                  <p class="text-sm text-muted mb-0">Defina taxas fixas usadas nos empréstimos (ex: 30% por mês ou por 30 dias, aplicados sobre o saldo em dívida).</p>
+                </div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addInterestTypeModal">
+                  <i class="material-symbols-rounded me-1">percent</i>
+                  Novo Tipo de Juro
+                </button>
               </div>
-              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addInterestTypeModal">
-                <i class="material-symbols-rounded me-1">percent</i>
-                Novo Tipo de Juro
-              </button>
-            </div>
 
-            <div class="table-responsive">
-              <table id="interest-types-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Taxa por ciclo (%)</th>
-                    <th>Período</th>
-                    <th>Método</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for it in interest_types %}
-                  <tr>
-                    <td>{{ it.id }}</td>
-                    <td>{{ it.name }}</td>
-                    <td>{{ it.rate|floatformat:2 }}</td>
-                    <td>{{ it.get_period_type_display }}</td>
-                    <td>
-                      {% if it.calculation_method == "flat" %}
-                        Taxa fixa sobre saldo
-                      {% else %}
-                        {{ it.calculation_method|title }}
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if it.is_active %}
-                        <span class="badge bg-success text-white">Activo</span>
-                      {% else %}
-                        <span class="badge bg-secondary text-white">Inactivo</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table id="interest-types-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nome</th>
+                      <th>Taxa por ciclo (%)</th>
+                      <th>Período</th>
+                      <th>Método</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for it in interest_types %}
+                      <tr>
+                        <td>{{ it.id }}</td>
+                        <td>{{ it.name }}</td>
+                        <td>{{ it.rate|floatformat:2 }}</td>
+                        <td>{{ it.get_period_type_display }}</td>
+                        <td>
+                          {% if it.calculation_method == 'flat' %}
+                            Taxa fixa sobre saldo
+                          {% else %}
+                            {{ it.calculation_method|title }}
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if it.is_active %}
+                            <span class="badge bg-success text-white">Activo</span>
+                          {% else %}
+                            <span class="badge bg-secondary text-white">Inactivo</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
+
+    {% include 'includes/footer.html' %}
   </div>
 
-  {% include "includes/footer.html" %}
-</div>
+  <!-- MODAL: NOVO TIPO DE JURO -->
+  <div class="modal fade" id="addInterestTypeModal" tabindex="-1" aria-labelledby="addInterestTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addInterestTypeForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addInterestTypeModalLabel">Novo Tipo de Juro</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Nome *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="name" id="id_interest_name" placeholder="Ex: Taxa Fixa 30%/mês" />
+              </div>
+            </div>
 
-<!-- MODAL: NOVO TIPO DE JURO -->
-<div class="modal fade" id="addInterestTypeModal" tabindex="-1" aria-labelledby="addInterestTypeModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="addInterestTypeForm">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addInterestTypeModalLabel">Novo Tipo de Juro</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Descrição (opcional)</label>
+              <div class="input-group input-group-outline">
+                <textarea class="form-control" name="description" id="id_interest_description" rows="2" placeholder="Ex: Microcrédito Salama 30% ao mês sobre saldo."></textarea>
+              </div>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label">Nome *</label>
-            <div class="input-group input-group-outline">
-              <input type="text" class="form-control" name="name" id="id_interest_name" placeholder="Ex: Taxa Fixa 30%/mês">
+            <div class="mb-3">
+              <label class="form-label">Taxa por ciclo (%) *</label>
+              <div class="input-group input-group-outline">
+                <input type="number" step="0.01" class="form-control" name="rate" id="id_interest_rate" placeholder="Ex: 30 para 30% por ciclo" />
+              </div>
+              <small class="text-muted">Exemplo: 30 significa que em cada ciclo (mês/dia) são cobrados 30% sobre o saldo em dívida.</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Tipo de Período *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="period_type" id="id_interest_period_type">
+                  <option value="">— Seleccione —</option>
+                  <option value="monthly">Mensal (ciclo em meses)</option>
+                  <option value="daily">Diário (ciclo em dias)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Método de Cálculo</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="calculation_method" id="id_interest_calc_method">
+                  <option value="flat" selected>Taxa fixa por ciclo sobre o saldo (modelo microcrédito)</option>
+                </select>
+              </div>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Descrição (opcional)</label>
-            <div class="input-group input-group-outline">
-              <textarea class="form-control" name="description" id="id_interest_description" rows="2"
-                        placeholder="Ex: Microcrédito Salama 30% ao mês sobre saldo."></textarea>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar</button>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Taxa por ciclo (%) *</label>
-            <div class="input-group input-group-outline">
-              <input type="number" step="0.01" class="form-control" name="rate" id="id_interest_rate"
-                     placeholder="Ex: 30 para 30% por ciclo">
-            </div>
-            <small class="text-muted">
-              Exemplo: 30 significa que em cada ciclo (mês/dia) são cobrados 30% sobre o saldo em dívida.
-            </small>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Tipo de Período *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="period_type" id="id_interest_period_type">
-                <option value="">— Seleccione —</option>
-                <option value="monthly">Mensal (ciclo em meses)</option>
-                <option value="daily">Diário (ciclo em dias)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Método de Cálculo</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="calculation_method" id="id_interest_calc_method">
-                <option value="flat" selected>Taxa fixa por ciclo sobre o saldo (modelo microcrédito)</option>
-              </select>
-            </div>
-          </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
-
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       $('#interest-types-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[1, 'asc']],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
+      })
+    
       $('#addInterestTypeForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const name = $('#id_interest_name').val().trim();
-        const rate = $('#id_interest_rate').val().trim();
-        const periodType = $('#id_interest_period_type').val();
-
+        e.preventDefault()
+    
+        const name = $('#id_interest_name').val().trim()
+        const rate = $('#id_interest_rate').val().trim()
+        const periodType = $('#id_interest_period_type').val()
+    
         if (!name || !rate || !periodType) {
-          Swal.fire('Validação', 'Nome, taxa e tipo de período são obrigatórios.', 'warning');
-          return;
+          Swal.fire('Validação', 'Nome, taxa e tipo de período são obrigatórios.', 'warning')
+          return
         }
-
+    
         $.ajax({
           url: "{% url 'core:create_interest_type' %}",
-          type: "POST",
+          type: 'POST',
           data: $(this).serialize(),
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Criado",
+                icon: 'success',
+                title: 'Criado',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
-              }).then(() => window.location.reload());
+              }).then(() => window.location.reload())
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao criar tipo de juro.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao criar tipo de juro.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar tipo de juro.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de juro.', 'error')
           }
-        });
-      });
-    });
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

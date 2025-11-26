@@ -1,120 +1,113 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Tipos de Contas</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Tipos de Contas</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Gestão de Tipos de Contas</h6>
-                <p class="text-sm text-muted mb-0">
-                  Definição de tipos de conta para operações de microcrédito.
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Gestão de Tipos de Contas</h6>
+                  <p class="text-sm text-muted mb-0">Definição de tipos de conta para operações de microcrédito.</p>
+                </div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addAccountTypeModal">
+                  <i class="material-symbols-rounded me-1">add_circle</i>
+                  Adicionar Tipo de Conta
+                </button>
               </div>
-              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addAccountTypeModal">
-                <i class="material-symbols-rounded me-1">add_circle</i>
-                Adicionar Tipo de Conta
-              </button>
-            </div>
 
-            <div class="table-responsive">
-              <table id="account-types-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Categoria</th>
-                    <th>Nome do Tipo de Conta</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for a in account_types %}
-                  <tr>
-                    <td>{{ a.id }}</td>
-                    <td>{{ a.get_category_display }}</td>
-                    <td>{{ a.name }}</td>
-                    <td>
-                      {% if a.is_active %}
-                        <span class="badge bg-success text-white">Activo</span>
-                      {% else %}
-                        <span class="badge bg-secondary text-white">Inactivo</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table id="account-types-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Categoria</th>
+                      <th>Nome do Tipo de Conta</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in account_types %}
+                      <tr>
+                        <td>{{ a.id }}</td>
+                        <td>{{ a.get_category_display }}</td>
+                        <td>{{ a.name }}</td>
+                        <td>
+                          {% if a.is_active %}
+                            <span class="badge bg-success text-white">Activo</span>
+                          {% else %}
+                            <span class="badge bg-secondary text-white">Inactivo</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
+
+    {% include 'includes/sl_footer.html' %}
   </div>
 
-  {% include "includes/sl_footer.html" %}
-</div>
+  <!-- MODAL: ADICIONAR TIPO DE CONTA -->
+  <div class="modal fade" id="addAccountTypeModal" tabindex="-1" aria-labelledby="addAccountTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addAccountTypeForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addAccountTypeModalLabel">Novo Tipo de Conta</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Categoria *</label>
+                <select class="form-select" name="category" id="id_category">
+                  <option value="">— Seleccione —</option>
+                  <option value="cash">Cash</option>
+                  <option value="mobile">Carteira móvel</option>
+                  <option value="bank">Conta bancária</option>
+                </select>
+              </div>
+            </div>
 
-<!-- MODAL: ADICIONAR TIPO DE CONTA -->
-<div class="modal fade" id="addAccountTypeModal" tabindex="-1" aria-labelledby="addAccountTypeModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="addAccountTypeForm">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addAccountTypeModalLabel">Novo Tipo de Conta</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <div class="mb-3">
-            <div class="input-group input-group-outline">
-              <label class="form-label">Categoria *</label>
-              <select class="form-select" name="category" id="id_category">
-                <option value="">— Seleccione —</option>
-                <option value="cash">Cash</option>
-                <option value="mobile">Carteira móvel</option>
-                <option value="bank">Conta bancária</option>
-              </select>
+            <div class="mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Nome do Tipo de Conta *</label>
+                <input type="text" class="form-control" name="name" id="id_account_name" />
+              </div>
             </div>
           </div>
-
-          <div class="mb-3">
-            <div class="input-group input-group-outline">
-              <label class="form-label">Nome do Tipo de Conta *</label>
-              <input type="text" class="form-control" name="name" id="id_account_name">
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar</button>
           </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
   <!-- DataTables -->
   {% comment %} <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script> {% endcomment %}
 
-  <!-- Opcional: Buttons se quiseres exportar também
+  <!--  Opcional: Buttons se quiseres exportar também
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -122,7 +115,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-  -->
+   -->
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -132,50 +125,53 @@
       // DataTable simples
       $('#account-types-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[0, 'asc']],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
+      })
+    
       // Submeter modal via AJAX
       $('#addAccountTypeForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const category = $('#id_category').val();
-        const name = $('#id_account_name').val().trim();
-
+        e.preventDefault()
+    
+        const category = $('#id_category').val()
+        const name = $('#id_account_name').val().trim()
+    
         if (!category || !name) {
-          Swal.fire('Validação', 'Categoria e nome são obrigatórios.', 'warning');
-          return;
+          Swal.fire('Validação', 'Categoria e nome são obrigatórios.', 'warning')
+          return
         }
-
+    
         $.ajax({
           url: "{% url 'core:create_account_type' %}",
-          type: "POST",
+          type: 'POST',
           data: $(this).serialize(),
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Criado",
+                icon: 'success',
+                title: 'Criado',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => {
-                window.location.reload();
-              });
+                window.location.reload()
+              })
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao criar tipo de conta.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao criar tipo de conta.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar tipo de conta.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de conta.', 'error')
           }
-        });
-      });
-    });
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

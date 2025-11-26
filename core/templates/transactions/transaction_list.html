@@ -1,104 +1,97 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Histórico de Transacções</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Histórico de Transacções</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
-                <p class="text-sm text-muted mb-0">
-                  Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas,
-                  Desembolsos de Empréstimos, Reembolsos de Empréstimos, Pagamentos de Leasing Tuk-Tuk
-                  e ajustes manuais.
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
+                  <p class="text-sm text-muted mb-0">Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas, Desembolsos de Empréstimos, Reembolsos de Empréstimos, Pagamentos de Leasing Tuk-Tuk e ajustes manuais.</p>
+                </div>
+                <!-- futuro: botão Nova Transacção manual -->
               </div>
-              <!-- futuro: botão Nova Transacção manual -->
-            </div>
 
-            <div class="table-responsive">
-              <table id="transactions-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Conta</th>
-                    <th>Tipo</th>
-                    <th>Origem</th>
-                    <th>Descrição</th>
-                    <th>Valor (MT)</th>
-                    <th>Saldo Antes</th>
-                    <th>Saldo Depois</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for t in transactions %}
-                  <tr>
-                    <td>{{ t.id }}</td>
-                    <td>{{ t.tx_date }}</td>
-                    <td>
-                      {{ t.company_account.name }}
-                      <br><small class="text-muted">{{ t.company_account.account_identifier }}</small>
-                    </td>
-                    <td>
-                      {% if t.tx_type == "IN" %}
-                        <span class="badge bg-success">Entrada</span>
-                      {% else %}
-                        <span class="badge bg-danger">Saída</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if t.source_type == "income" %}
-                        Rendimento
-                      {% elif t.source_type == "expense" %}
-                        Despesa
-                      {% elif t.source_type == "manual" %}
-                        Manual
-                      {% elif t.source_type == "loan_disbursement" %}
-                        Desembolso de Empréstimo
-                      {% elif t.source_type == "loan_repayment" %}
-                        Reembolso de Empréstimo
-                      {% elif t.source_type == "tuktuk_lease_payment" %}
-                        Pagamento Leasing Tuk-Tuk
-                      {% elif t.source_type == "opening_balance" %}
-                        Saldo Inicial
-                      {% elif t.source_type == "adjustment" %}
-                        Ajuste Manual
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>{{ t.description }}</td>
-                    <td>{{ t.amount|floatformat:2 }}</td>
-                    <td>{{ t.balance_before|floatformat:2 }}</td>
-                    <td>{{ t.balance_after|floatformat:2 }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table id="transactions-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Data</th>
+                      <th>Conta</th>
+                      <th>Tipo</th>
+                      <th>Origem</th>
+                      <th>Descrição</th>
+                      <th>Valor (MT)</th>
+                      <th>Saldo Antes</th>
+                      <th>Saldo Depois</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for t in transactions %}
+                      <tr>
+                        <td>{{ t.id }}</td>
+                        <td>{{ t.tx_date }}</td>
+                        <td>
+                          {{ t.company_account.name }}
+                          <br /><small class="text-muted">{{ t.company_account.account_identifier }}</small>
+                        </td>
+                        <td>
+                          {% if t.tx_type == 'IN' %}
+                            <span class="badge bg-success">Entrada</span>
+                          {% else %}
+                            <span class="badge bg-danger">Saída</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if t.source_type == 'income' %}
+                            Rendimento
+                          {% elif t.source_type == 'expense' %}
+                            Despesa
+                          {% elif t.source_type == 'manual' %}
+                            Manual
+                          {% elif t.source_type == 'loan_disbursement' %}
+                            Desembolso de Empréstimo
+                          {% elif t.source_type == 'loan_repayment' %}
+                            Reembolso de Empréstimo
+                          {% elif t.source_type == 'tuktuk_lease_payment' %}
+                            Pagamento Leasing Tuk-Tuk
+                          {% elif t.source_type == 'opening_balance' %}
+                            Saldo Inicial
+                          {% elif t.source_type == 'adjustment' %}
+                            Ajuste Manual
+                          {% else %}
+                            —
+                          {% endif %}
+                        </td>
+                        <td>{{ t.description }}</td>
+                        <td>{{ t.amount|floatformat:2 }}</td>
+                        <td>{{ t.balance_before|floatformat:2 }}</td>
+                        <td>{{ t.balance_after|floatformat:2 }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
-  </div>
 
-  {% include "includes/footer.html" %}
-</div>
-{% endblock content %}
+    {% include 'includes/footer.html' %}
+  </div>
+{% endblock %}
 
 {% block extra_js %}
   <!-- DataTables Buttons -->
@@ -114,20 +107,26 @@
     document.addEventListener('DOMContentLoaded', function () {
       $('#transactions-table').DataTable({
         pageLength: 25,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
-        order: [[1, 'desc'], [0, 'desc']],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
+        order: [
+          [1, 'desc'],
+          [0, 'desc']
+        ],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         },
         dom: 'lBfrtip',
         buttons: [
-          { extend: 'copy',  text: 'Copiar',     className: 'btn btn-sm btn-outline-secondary' },
-          { extend: 'csv',   text: 'CSV',        className: 'btn btn-sm btn-outline-primary' },
-          { extend: 'excel', text: 'Excel',      className: 'btn btn-sm btn-outline-success' },
-          { extend: 'pdf',   text: 'PDF',        className: 'btn btn-sm btn-outline-danger' },
-          { extend: 'print', text: 'Imprimir',   className: 'btn btn-sm btn-outline-dark' }
+          { extend: 'copy', text: 'Copiar', className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv', text: 'CSV', className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf', text: 'PDF', className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
         ]
-      });
-    });
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

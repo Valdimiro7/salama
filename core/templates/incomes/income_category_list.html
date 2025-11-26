@@ -1,154 +1,149 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Tipos de Rendimentos</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Tipos de Rendimentos</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Gestão de Tipos de Rendimentos</h6>
-                <p class="text-sm text-muted mb-0">
-                  Defina categorias como Juros, Reembolsos, Depósitos, etc.
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Gestão de Tipos de Rendimentos</h6>
+                  <p class="text-sm text-muted mb-0">Defina categorias como Juros, Reembolsos, Depósitos, etc.</p>
+                </div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addIncomeCategoryModal">
+                  <i class="material-symbols-rounded me-1">category</i>
+                  Novo Tipo
+                </button>
               </div>
-              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addIncomeCategoryModal">
-                <i class="material-symbols-rounded me-1">category</i>
-                Novo Tipo
-              </button>
-            </div>
 
-            <div class="table-responsive">
-              <table id="income-categories-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Descrição</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for c in categories %}
-                  <tr>
-                    <td>{{ c.id }}</td>
-                    <td>{{ c.name }}</td>
-                    <td>{{ c.description|default:"—" }}</td>
-                    <td>
-                      {% if c.is_active %}
-                        <span class="badge bg-success text-white">Activo</span>
-                      {% else %}
-                        <span class="badge bg-secondary text-white">Inactivo</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table id="income-categories-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nome</th>
+                      <th>Descrição</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for c in categories %}
+                      <tr>
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.name }}</td>
+                        <td>{{ c.description|default:'—' }}</td>
+                        <td>
+                          {% if c.is_active %}
+                            <span class="badge bg-success text-white">Activo</span>
+                          {% else %}
+                            <span class="badge bg-secondary text-white">Inactivo</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
+
+    {% include 'includes/footer.html' %}
   </div>
 
-  {% include "includes/footer.html" %}
-</div>
+  <!-- MODAL: NOVO TIPO DE RENDIMENTO -->
+  <div class="modal fade" id="addIncomeCategoryModal" tabindex="-1" aria-labelledby="addIncomeCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addIncomeCategoryForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addIncomeCategoryModalLabel">Novo Tipo de Rendimento</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Nome *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="name" id="id_income_cat_name" />
+              </div>
+            </div>
 
-<!-- MODAL: NOVO TIPO DE RENDIMENTO -->
-<div class="modal fade" id="addIncomeCategoryModal" tabindex="-1" aria-labelledby="addIncomeCategoryModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="addIncomeCategoryForm">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addIncomeCategoryModalLabel">Novo Tipo de Rendimento</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <div class="mb-3">
-            <label class="form-label">Nome *</label>
-            <div class="input-group input-group-outline">
-              <input type="text" class="form-control" name="name" id="id_income_cat_name">
+            <div class="mb-3">
+              <label class="form-label">Descrição (opcional)</label>
+              <div class="input-group input-group-outline">
+                <textarea class="form-control" name="description" id="id_income_cat_description" rows="2"></textarea>
+              </div>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Descrição (opcional)</label>
-            <div class="input-group input-group-outline">
-              <textarea class="form-control" name="description" id="id_income_cat_description" rows="2"></textarea>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar</button>
           </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
-
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       $('#income-categories-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[1, 'asc']],
-        language: { url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json" }
-      });
-
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json' }
+      })
+    
       $('#addIncomeCategoryForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const name = $('#id_income_cat_name').val().trim();
+        e.preventDefault()
+    
+        const name = $('#id_income_cat_name').val().trim()
         if (!name) {
-          Swal.fire('Validação', 'O nome do tipo de rendimento é obrigatório.', 'warning');
-          return;
+          Swal.fire('Validação', 'O nome do tipo de rendimento é obrigatório.', 'warning')
+          return
         }
-
+    
         $.ajax({
           url: "{% url 'core:create_income_category' %}",
-          type: "POST",
+          type: 'POST',
           data: $(this).serialize(),
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Criado",
+                icon: 'success',
+                title: 'Criado',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
-              }).then(() => window.location.reload());
+              }).then(() => window.location.reload())
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao criar tipo de rendimento.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao criar tipo de rendimento.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar tipo de rendimento.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de rendimento.', 'error')
           }
-        });
-      });
-    });
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

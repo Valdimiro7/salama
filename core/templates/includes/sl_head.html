@@ -51,3 +51,36 @@
 <link id="pagestyle" href="{% static "assets/css/material-dashboard.css" %}?v=3.2.0" rel="stylesheet" />
 
 {% comment %} <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script> {% endcomment %}
+
+<style>
+    /* Cor para o menu activo */
+    .nav-link.active,
+    .nav-link.active span,
+    .nav-link.active i.material-symbols-rounded {
+        background-color: #064E3B !important;
+        color: #ffffff !important;
+        border-radius: 8px;
+    }
+
+    /* Para sub-menus dentro de collapses */
+    .nav .nav-link.active {
+        background-color: #064E3B !important;
+        color: #ffffff !important;
+    }
+
+    /* Ícones dentro dos activos */
+    .nav-link.active i {
+        color: #ffffff !important;
+    }
+
+    /* Quando o collapse está aberto e tem filhos activos */
+    .collapse.show > ul > li > a.active {
+        background-color: #064E3B !important;
+        color: #ffffff !important;
+    }
+
+    /* Remove interferências do Material Dashboard */
+    .sidenav .navbar-nav .nav-item .nav-link.active:after {
+        display: none !important;
+    }
+</style>

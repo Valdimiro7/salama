@@ -1,84 +1,79 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12 col-xl-10 mx-auto">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
-            <h6 class="text-white text-capitalize ps-3">Empréstimos Pendentes</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12 col-xl-10 mx-auto">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Empréstimos Pendentes</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Empréstimos à espera de confirmação</h6>
-                <p class="text-sm text-muted mb-0">
-                  Ao confirmar, o empréstimo passa para a fase de desembolso. Pode também rejeitar o pedido.
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Empréstimos à espera de confirmação</h6>
+                  <p class="text-sm text-muted mb-0">Ao confirmar, o empréstimo passa para a fase de desembolso. Pode também rejeitar o pedido.</p>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table id="pending-loans-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Membro</th>
+                      <th>Tipo</th>
+                      <th>Valor (MT)</th>
+                      <th>Pagamento / ciclo</th>
+                      <th>Nº períodos</th>
+                      <th>Status</th>
+                      <th style="width: 180px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for loan in loans %}
+                      <tr data-id="{{ loan.id }}">
+                        <td>{{ loan.id }}</td>
+                        <td>
+                          {{ loan.member.first_name }} {{ loan.member.last_name }}
+                          <br /><small class="text-muted">{{ loan.member.phone }}</small>
+                        </td>
+                        <td>{{ loan.loan_type.name|default:'—' }}</td>
+                        <td>{{ loan.principal_amount|floatformat:2 }}</td>
+                        <td>{{ loan.payment_per_period|default:0|floatformat:2 }}</td>
+                        <td>{{ loan.term_periods }}</td>
+                        <td>
+                          <span class="badge bg-warning text-dark">Pendente</span>
+                        </td>
+                        <td class="text-nowrap">
+                          <button type="button" class="btn btn-outline-success btn-xs btn-confirm-loan me-1">
+                            <i class="material-symbols-rounded" style="font-size:16px;">check_circle</i>
+                            Confirmar
+                          </button>
+                          <button type="button" class="btn btn-outline-danger btn-xs btn-reject-loan">
+                            <i class="material-symbols-rounded" style="font-size:16px;">cancel</i>
+                            Rejeitar
+                          </button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
               </div>
             </div>
-
-            <div class="table-responsive">
-              <table id="pending-loans-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Membro</th>
-                    <th>Tipo</th>
-                    <th>Valor (MT)</th>
-                    <th>Pagamento / ciclo</th>
-                    <th>Nº períodos</th>
-                    <th>Status</th>
-                    <th style="width: 180px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for loan in loans %}
-                  <tr data-id="{{ loan.id }}">
-                    <td>{{ loan.id }}</td>
-                    <td>
-                      {{ loan.member.first_name }} {{ loan.member.last_name }}
-                      <br><small class="text-muted">{{ loan.member.phone }}</small>
-                    </td>
-                    <td>{{ loan.loan_type.name|default:"—" }}</td>
-                    <td>{{ loan.principal_amount|floatformat:2 }}</td>
-                    <td>{{ loan.payment_per_period|default:0|floatformat:2 }}</td>
-                    <td>{{ loan.term_periods }}</td>
-                    <td><span class="badge bg-warning text-dark">Pendente</span></td>
-                    <td class="text-nowrap">
-                      <button type="button"
-                              class="btn btn-outline-success btn-xs btn-confirm-loan me-1">
-                        <i class="material-symbols-rounded" style="font-size:16px;">check_circle</i>
-                        Confirmar
-                      </button>
-                      <button type="button"
-                              class="btn btn-outline-danger btn-xs btn-reject-loan">
-                        <i class="material-symbols-rounded" style="font-size:16px;">cancel</i>
-                        Rejeitar
-                      </button>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-
           </div>
         </div>
       </div>
-
     </div>
-  </div>
 
-  {% include "includes/sl_footer.html" %}
-</div>
-{% endblock content %}
+    {% include 'includes/sl_footer.html' %}
+  </div>
+{% endblock %}
 
 {% block extra_js %}
   <!-- DataTables + Buttons -->
@@ -95,26 +90,29 @@
     document.addEventListener('DOMContentLoaded', function () {
       const table = $('#pending-loans-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1],[10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[0, 'desc']],
         dom: 'lBfrtip',
         buttons: [
-          { extend: 'copy',  text: 'Copy',  className: 'btn btn-sm btn-primary' },
-          { extend: 'csv',   text: 'CSV',   className: 'btn btn-sm btn-success' },
+          { extend: 'copy', text: 'Copy', className: 'btn btn-sm btn-primary' },
+          { extend: 'csv', text: 'CSV', className: 'btn btn-sm btn-success' },
           { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-warning' },
-          { extend: 'pdf',   text: 'PDF',   className: 'btn btn-sm btn-danger' },
+          { extend: 'pdf', text: 'PDF', className: 'btn btn-sm btn-danger' },
           { extend: 'print', text: 'Print', className: 'btn btn-sm btn-info' }
         ],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
+      })
+    
       // CONFIRMAR EMPRÉSTIMO
       $(document).on('click', '.btn-confirm-loan', function () {
-        const tr = $(this).closest('tr');
-        const loanId = tr.data('id');
-
+        const tr = $(this).closest('tr')
+        const loanId = tr.data('id')
+    
         Swal.fire({
           title: 'Confirmar Empréstimo?',
           text: 'O empréstimo será aprovado e poderá ser desembolsado.',
@@ -122,38 +120,38 @@
           showCancelButton: true,
           confirmButtonText: 'Sim, confirmar',
           cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (!result.isConfirmed) return;
-
+        }).then((result) => {
+          if (!result.isConfirmed) return
+    
           $.ajax({
             url: "{% url 'core:confirm_loan' 0 %}".replace('/0/', '/' + loanId + '/'),
-            type: "POST",
-            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            type: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
             success: function (resp) {
               if (resp.success) {
                 Swal.fire({
-                  icon: "success",
-                  title: "Confirmado",
+                  icon: 'success',
+                  title: 'Confirmado',
                   text: resp.message,
                   timer: 2000,
                   showConfirmButton: false
-                }).then(() => window.location.reload());
+                }).then(() => window.location.reload())
               } else {
-                Swal.fire("Erro", resp.message || "Falha ao confirmar empréstimo.", "error");
+                Swal.fire('Erro', resp.message || 'Falha ao confirmar empréstimo.', 'error')
               }
             },
             error: function (xhr) {
-              Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao confirmar empréstimo.", "error");
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao confirmar empréstimo.', 'error')
             }
-          });
-        });
-      });
-
+          })
+        })
+      })
+    
       // REJEITAR EMPRÉSTIMO
       $(document).on('click', '.btn-reject-loan', function () {
-        const tr = $(this).closest('tr');
-        const loanId = tr.data('id');
-
+        const tr = $(this).closest('tr')
+        const loanId = tr.data('id')
+    
         Swal.fire({
           title: 'Rejeitar Empréstimo?',
           text: 'Esta acção irá marcar o empréstimo como rejeitado/cancelado.',
@@ -161,33 +159,32 @@
           showCancelButton: true,
           confirmButtonText: 'Sim, rejeitar',
           cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (!result.isConfirmed) return;
-
+        }).then((result) => {
+          if (!result.isConfirmed) return
+    
           $.ajax({
             url: "{% url 'core:reject_loan' 0 %}".replace('/0/', '/' + loanId + '/'),
-            type: "POST",
-            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            type: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
             success: function (resp) {
               if (resp.success) {
                 Swal.fire({
-                  icon: "success",
-                  title: "Rejeitado",
+                  icon: 'success',
+                  title: 'Rejeitado',
                   text: resp.message,
                   timer: 2000,
                   showConfirmButton: false
-                }).then(() => window.location.reload());
+                }).then(() => window.location.reload())
               } else {
-                Swal.fire("Erro", resp.message || "Falha ao rejeitar empréstimo.", "error");
+                Swal.fire('Erro', resp.message || 'Falha ao rejeitar empréstimo.', 'error')
               }
             },
             error: function (xhr) {
-              Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao rejeitar empréstimo.", "error");
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao rejeitar empréstimo.', 'error')
             }
-          });
-        });
-      });
-
-    });
+          })
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

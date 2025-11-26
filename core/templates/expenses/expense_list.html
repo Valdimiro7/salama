@@ -1,168 +1,153 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Lista de Despesas</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Lista de Despesas</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Despesas registadas</h6>
-                <p class="text-sm text-muted mb-0">
-                  Registo e controlo de despesas operacionais.
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Despesas registadas</h6>
+                  <p class="text-sm text-muted mb-0">Registo e controlo de despesas operacionais.</p>
+                </div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                  <i class="material-symbols-rounded me-1">add_card</i>
+                  Nova Despesa
+                </button>
               </div>
-              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
-                <i class="material-symbols-rounded me-1">add_card</i>
-                Nova Despesa
-              </button>
-            </div>
 
-            <div class="table-responsive">
-              <table id="expenses-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Categoria</th>
-                    <th>Conta da Empresa</th>
-                    <th>Descrição</th>
-                    <th>Valor (MT)</th>
-                    <th>Anexo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for e in expenses %}
-                  <tr>
-                    <td>{{ e.id }}</td>
-                    <td>{{ e.expense_date }}</td>
-                    <td>{{ e.category.name }}</td>
-                    <td>
-                      {{ e.company_account.name }}
-                      <br><small class="text-muted">{{ e.company_account.account_identifier }}</small>
-                    </td>
-                    <td>{{ e.description }}</td>
-                    <td>{{ e.amount|floatformat:2 }}</td>
-                    <td>
-                        {% if e.attachment %}
-                            <a href="{% url 'core:download_expense_attachment' e.id %}"
-                            class="btn btn-sm btn-outline-primary">
-                            <i class="material-symbols-rounded" style="font-size:18px;">attach_file</i>
-                            </a>
-                        {% else %}
+              <div class="table-responsive">
+                <table id="expenses-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Conta da Empresa</th>
+                      <th>Descrição</th>
+                      <th>Valor (MT)</th>
+                      <th>Anexo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for e in expenses %}
+                      <tr>
+                        <td>{{ e.id }}</td>
+                        <td>{{ e.expense_date }}</td>
+                        <td>{{ e.category.name }}</td>
+                        <td>
+                          {{ e.company_account.name }}
+                          <br /><small class="text-muted">{{ e.company_account.account_identifier }}</small>
+                        </td>
+                        <td>{{ e.description }}</td>
+                        <td>{{ e.amount|floatformat:2 }}</td>
+                        <td>
+                          {% if e.attachment %}
+                            <a href="{% url 'core:download_expense_attachment' e.id %}" class="btn btn-sm btn-outline-primary"><i class="material-symbols-rounded" style="font-size:18px;">attach_file</i></a>
+                          {% else %}
                             <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
+
+    {% include 'includes/footer.html' %}
   </div>
 
-  {% include "includes/footer.html" %}
-</div>
+  <!-- MODAL: NOVA DESPESA -->
+  <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- IMPORTANTE: enctype para upload de ficheiros -->
+        <form id="addExpenseForm" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addExpenseModalLabel">Nova Despesa</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Data *</label>
+              <div class="input-group input-group-outline">
+                <input type="date" class="form-control" name="expense_date" id="id_expense_date" />
+              </div>
+            </div>
 
-<!-- MODAL: NOVA DESPESA -->
-<div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <!-- IMPORTANTE: enctype para upload de ficheiros -->
-      <form id="addExpenseForm" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addExpenseModalLabel">Nova Despesa</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Categoria *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="category" id="id_expense_category">
+                  <option value="">— Seleccione —</option>
+                  {% for c in categories %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label">Data *</label>
-            <div class="input-group input-group-outline">
-              <input type="date" class="form-control" name="expense_date" id="id_expense_date">
+            <div class="mb-3">
+              <label class="form-label">Conta da Empresa *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="company_account" id="id_expense_company_account">
+                  <option value="">— Seleccione —</option>
+                  {% for ca in company_accounts %}
+                    <option value="{{ ca.id }}">{{ ca.name }} ({{ ca.account_type.get_category_display }}) - {{ ca.account_identifier }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Descrição *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="description" id="id_expense_description" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Valor (MT) *</label>
+              <div class="input-group input-group-outline">
+                <input type="number" step="0.01" class="form-control" name="amount" id="id_expense_amount" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Anexo (opcional)</label>
+              <div class="input-group input-group-outline">
+                <input type="file" class="form-control" name="attachment" id="id_expense_attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+              </div>
+              <small class="text-muted">Ex: comprovativo, recibo, factura, etc.</small>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Categoria *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="category" id="id_expense_category">
-                <option value="">— Seleccione —</option>
-                {% for c in categories %}
-                  <option value="{{ c.id }}">{{ c.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar</button>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Conta da Empresa *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="company_account" id="id_expense_company_account">
-                <option value="">— Seleccione —</option>
-                {% for ca in company_accounts %}
-                  <option value="{{ ca.id }}">
-                    {{ ca.name }} ({{ ca.account_type.get_category_display }}) - {{ ca.account_identifier }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Descrição *</label>
-            <div class="input-group input-group-outline">
-              <input type="text" class="form-control" name="description" id="id_expense_description">
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Valor (MT) *</label>
-            <div class="input-group input-group-outline">
-              <input type="number" step="0.01" class="form-control" name="amount" id="id_expense_amount">
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Anexo (opcional)</label>
-            <div class="input-group input-group-outline">
-              <input type="file" class="form-control" name="attachment" id="id_expense_attachment"
-                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-            </div>
-            <small class="text-muted">Ex: comprovativo, recibo, factura, etc.</small>
-          </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
   <!-- DataTables -->
-
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -170,67 +155,69 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       // Data default = hoje
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      document.getElementById('id_expense_date').value = `${yyyy}-${mm}-${dd}`;
-
+      const today = new Date()
+      const yyyy = today.getFullYear()
+      const mm = String(today.getMonth() + 1).padStart(2, '0')
+      const dd = String(today.getDate()).padStart(2, '0')
+      document.getElementById('id_expense_date').value = `${yyyy}-${mm}-${dd}`
+    
       $('#expenses-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[1, 'desc']],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
+      })
+    
       // Submeter formulário com ficheiro -> usar FormData
       $('#addExpenseForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const date = $('#id_expense_date').val();
-        const category = $('#id_expense_category').val();
-        const companyAccount = $('#id_expense_company_account').val();
-        const description = $('#id_expense_description').val().trim();
-        const amount = $('#id_expense_amount').val().trim();
-
+        e.preventDefault()
+    
+        const date = $('#id_expense_date').val()
+        const category = $('#id_expense_category').val()
+        const companyAccount = $('#id_expense_company_account').val()
+        const description = $('#id_expense_description').val().trim()
+        const amount = $('#id_expense_amount').val().trim()
+    
         if (!date || !category || !companyAccount || !description || !amount) {
-          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
-          return;
+          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
+          return
         }
-
-        const formEl = document.getElementById('addExpenseForm');
-        const formData = new FormData(formEl);
-
+    
+        const formEl = document.getElementById('addExpenseForm')
+        const formData = new FormData(formEl)
+    
         $.ajax({
           url: "{% url 'core:create_expense' %}",
-          type: "POST",
+          type: 'POST',
           data: formData,
-          processData: false,  // NÃO processar (por causa do ficheiro)
-          contentType: false,  // deixar o browser definir o boundary
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          processData: false, // NÃO processar (por causa do ficheiro)
+          contentType: false, // deixar o browser definir o boundary
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Registada",
+                icon: 'success',
+                title: 'Registada',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => {
-                window.location.reload();
-              });
+                window.location.reload()
+              })
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao registar despesa.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao registar despesa.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao registar despesa.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao registar despesa.', 'error')
           }
-        });
-      });
-
-    });
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

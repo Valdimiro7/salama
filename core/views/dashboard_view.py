@@ -447,6 +447,7 @@ def dashboard_view(request):
     # ==========================
     context = {
         "page_title": "Salama · Microcrédito",
+        "segment": "dashboard",
         # KPIs
         "kpi_portfolio_total": portfolio_total,
         "kpi_portfolio_change_label": kpi_portfolio_change_label,

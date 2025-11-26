@@ -1,227 +1,215 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #082939;">
-            <h6 class="text-white text-capitalize ps-3">Lista de Rendimentos</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color: #064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Lista de Rendimentos</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Rendimentos registados</h6>
-                <p class="text-sm text-muted mb-0">
-                  Entrada de valores nas contas da empresa (juros, reembolsos, depósitos, etc.).
-                </p>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Rendimentos registados</h6>
+                  <p class="text-sm text-muted mb-0">Entrada de valores nas contas da empresa (juros, reembolsos, depósitos, etc.).</p>
+                </div>
+                <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+                  <i class="material-symbols-rounded me-1">add_card</i>
+                  Novo Rendimento
+                </button>
               </div>
-              <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
-                <i class="material-symbols-rounded me-1">add_card</i>
-                Novo Rendimento
-              </button>
-            </div>
 
-            <div class="table-responsive">
-              <table id="incomes-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Tipo</th>
-                    <th>Conta da Empresa</th>
-                    <th>Descrição</th>
-                    <th>Valor (MT)</th>
-                    <th>Anexo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for i in incomes %}
-                  <tr>
-                    <td>{{ i.id }}</td>
-                    <td>{{ i.income_date }}</td>
-                    <td>{{ i.category.name }}</td>
-                    <td>
-                      {{ i.company_account.name }}
-                      <br><small class="text-muted">{{ i.company_account.account_identifier }}</small>
-                    </td>
-                    <td>{{ i.description }}</td>
-                    <td>{{ i.amount|floatformat:2 }}</td>
-                    <td>
-                      {% if i.attachment %}
-                        <a href="{% url 'core:download_income_attachment' i.id %}"
-                           class="btn btn-sm btn-outline-primary">
-                          <i class="material-symbols-rounded" style="font-size:18px;">attach_file</i>
-                        </a>
-                      {% else %}
-                        <span class="text-muted">—</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table id="incomes-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Data</th>
+                      <th>Tipo</th>
+                      <th>Conta da Empresa</th>
+                      <th>Descrição</th>
+                      <th>Valor (MT)</th>
+                      <th>Anexo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for i in incomes %}
+                      <tr>
+                        <td>{{ i.id }}</td>
+                        <td>{{ i.income_date }}</td>
+                        <td>{{ i.category.name }}</td>
+                        <td>
+                          {{ i.company_account.name }}
+                          <br /><small class="text-muted">{{ i.company_account.account_identifier }}</small>
+                        </td>
+                        <td>{{ i.description }}</td>
+                        <td>{{ i.amount|floatformat:2 }}</td>
+                        <td>
+                          {% if i.attachment %}
+                            <a href="{% url 'core:download_income_attachment' i.id %}" class="btn btn-sm btn-outline-primary"><i class="material-symbols-rounded" style="font-size:18px;">attach_file</i></a>
+                          {% else %}
+                            <span class="text-muted">—</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
       </div>
-
     </div>
+
+    {% include 'includes/footer.html' %}
   </div>
 
-  {% include "includes/footer.html" %}
-</div>
+  <!-- MODAL: NOVO RENDIMENTO -->
+  <div class="modal fade" id="addIncomeModal" tabindex="-1" aria-labelledby="addIncomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- IMPORTANTE: enctype -->
+        <form id="addIncomeForm" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addIncomeModalLabel">Novo Rendimento</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Data *</label>
+              <div class="input-group input-group-outline">
+                <input type="date" class="form-control" name="income_date" id="id_income_date" />
+              </div>
+            </div>
 
-<!-- MODAL: NOVO RENDIMENTO -->
-<div class="modal fade" id="addIncomeModal" tabindex="-1" aria-labelledby="addIncomeModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <!-- IMPORTANTE: enctype -->
-      <form id="addIncomeForm" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addIncomeModalLabel">Novo Rendimento</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Tipo de Rendimento *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="category" id="id_income_category">
+                  <option value="">— Seleccione —</option>
+                  {% for c in categories %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label">Data *</label>
-            <div class="input-group input-group-outline">
-              <input type="date" class="form-control" name="income_date" id="id_income_date">
+            <div class="mb-3">
+              <label class="form-label">Conta da Empresa *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="company_account" id="id_income_company_account">
+                  <option value="">— Seleccione —</option>
+                  {% for ca in company_accounts %}
+                    <option value="{{ ca.id }}">{{ ca.name }} ({{ ca.account_type.get_category_display }}) - {{ ca.account_identifier }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Descrição *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="description" id="id_income_description" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Valor (MT) *</label>
+              <div class="input-group input-group-outline">
+                <input type="number" step="0.01" class="form-control" name="amount" id="id_income_amount" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Anexo (opcional)</label>
+              <div class="input-group input-group-outline">
+                <input type="file" class="form-control" name="attachment" id="id_income_attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+              </div>
+              <small class="text-muted">Ex: comprovativo de pagamento, extracto bancário, etc.</small>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Tipo de Rendimento *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="category" id="id_income_category">
-                <option value="">— Seleccione —</option>
-                {% for c in categories %}
-                  <option value="{{ c.id }}">{{ c.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar</button>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Conta da Empresa *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="company_account" id="id_income_company_account">
-                <option value="">— Seleccione —</option>
-                {% for ca in company_accounts %}
-                  <option value="{{ ca.id }}">
-                    {{ ca.name }} ({{ ca.account_type.get_category_display }}) - {{ ca.account_identifier }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Descrição *</label>
-            <div class="input-group input-group-outline">
-              <input type="text" class="form-control" name="description" id="id_income_description">
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Valor (MT) *</label>
-            <div class="input-group input-group-outline">
-              <input type="number" step="0.01" class="form-control" name="amount" id="id_income_amount">
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Anexo (opcional)</label>
-            <div class="input-group input-group-outline">
-              <input type="file" class="form-control" name="attachment" id="id_income_attachment"
-                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-            </div>
-            <small class="text-muted">Ex: comprovativo de pagamento, extracto bancário, etc.</small>
-          </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
-
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       // Data default = hoje
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      document.getElementById('id_income_date').value = `${yyyy}-${mm}-${dd}`;
-
+      const today = new Date()
+      const yyyy = today.getFullYear()
+      const mm = String(today.getMonth() + 1).padStart(2, '0')
+      const dd = String(today.getDate()).padStart(2, '0')
+      document.getElementById('id_income_date').value = `${yyyy}-${mm}-${dd}`
+    
       $('#incomes-table').DataTable({
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
         order: [[1, 'desc']],
-        language: { url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json" }
-      });
-
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json' }
+      })
+    
       $('#addIncomeForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const date = $('#id_income_date').val();
-        const category = $('#id_income_category').val();
-        const companyAccount = $('#id_income_company_account').val();
-        const description = $('#id_income_description').val().trim();
-        const amount = $('#id_income_amount').val().trim();
-
+        e.preventDefault()
+    
+        const date = $('#id_income_date').val()
+        const category = $('#id_income_category').val()
+        const companyAccount = $('#id_income_company_account').val()
+        const description = $('#id_income_description').val().trim()
+        const amount = $('#id_income_amount').val().trim()
+    
         if (!date || !category || !companyAccount || !description || !amount) {
-          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
-          return;
+          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
+          return
         }
-
-        const formEl = document.getElementById('addIncomeForm');
-        const formData = new FormData(formEl);
-
+    
+        const formEl = document.getElementById('addIncomeForm')
+        const formData = new FormData(formEl)
+    
         $.ajax({
           url: "{% url 'core:create_income' %}",
-          type: "POST",
+          type: 'POST',
           data: formData,
           processData: false,
           contentType: false,
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
               Swal.fire({
-                icon: "success",
-                title: "Registado",
+                icon: 'success',
+                title: 'Registado',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
-              }).then(() => window.location.reload());
+              }).then(() => window.location.reload())
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao registar rendimento.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao registar rendimento.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao registar rendimento.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao registar rendimento.', 'error')
           }
-        });
-      });
-
-    });
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}

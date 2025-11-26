@@ -1,223 +1,200 @@
-{% extends "layouts/sl_base.html" %}
+{% extends 'layouts/sl_base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-2">
-  <div class="row">
-    <div class="col-12 col-xl-11 mx-auto">
-
-      <div class="card my-4">
-        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
-            <h6 class="text-white text-capitalize ps-3">Pagamentos Leasing · Tuk-Tuk</h6>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12 col-xl-11 mx-auto">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
+              <h6 class="text-white text-capitalize ps-3">Pagamentos Leasing · Tuk-Tuk</h6>
+            </div>
           </div>
-        </div>
 
-        <div class="card-body px-0 pb-2">
-          <div class="p-4">
-
-            <!-- KPI CARDS -->
-            <div class="row mb-4">
-              <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card shadow-sm border-0 h-100">
-                  <div class="card-body py-3">
-                    <p class="text-sm text-muted mb-1">Nº total de pagamentos</p>
-                    <h4 class="mb-0">{{ kpi_total_pagamentos }}</h4>
+          <div class="card-body px-0 pb-2">
+            <div class="p-4">
+              <!-- KPI CARDS -->
+              <div class="row mb-4">
+                <div class="col-md-4 col-sm-6 mb-3">
+                  <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body py-3">
+                      <p class="text-sm text-muted mb-1">Nº total de pagamentos</p>
+                      <h4 class="mb-0">{{ kpi_total_pagamentos }}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 col-sm-6 mb-3">
+                  <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body py-3">
+                      <p class="text-sm text-muted mb-1">Total recebido (MT)</p>
+                      <h5 class="mb-0">{{ kpi_total_valor|floatformat:2 }}</h5>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 col-sm-6 mb-3">
+                  <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body py-3">
+                      <p class="text-sm text-muted mb-1">Total recebido no mês (MT)</p>
+                      <h5 class="mb-0 text-success">{{ kpi_total_mes|floatformat:2 }}</h5>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card shadow-sm border-0 h-100">
-                  <div class="card-body py-3">
-                    <p class="text-sm text-muted mb-1">Total recebido (MT)</p>
-                    <h5 class="mb-0">{{ kpi_total_valor|floatformat:2 }}</h5>
-                  </div>
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="mb-0">Histórico de pagamentos de leasing</h6>
+                  <p class="text-sm text-muted mb-0">Registe e acompanhe as transferências semanais dos motoristas para as contas da empresa.</p>
+                </div>
+                <div>
+                  <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-payment">
+                    <i class="material-symbols-rounded me-1" style="font-size:18px;">add</i>
+                    Registar pagamento
+                  </button>
                 </div>
               </div>
-              <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card shadow-sm border-0 h-100">
-                  <div class="card-body py-3">
-                    <p class="text-sm text-muted mb-1">Total recebido no mês (MT)</p>
-                    <h5 class="mb-0 text-success">{{ kpi_total_mes|floatformat:2 }}</h5>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div>
-                <h6 class="mb-0">Histórico de pagamentos de leasing</h6>
-                <p class="text-sm text-muted mb-0">
-                  Registe e acompanhe as transferências semanais dos motoristas para as contas da empresa.
-                </p>
-              </div>
-              <div>
-                <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-payment">
-                  <i class="material-symbols-rounded me-1" style="font-size:18px;">add</i>
-                  Registar pagamento
-                </button>
-              </div>
-            </div>
-
-            <div class="table-responsive">
-              <table id="tuktuk-lease-payment-table"
-                     class="table table-bordered table-striped align-items-center mb-0"
-                     style="width:100%">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Tuk-Tuk</th>
-                    <th>Motorista</th>
-                    <th>Contrato</th>
-                    <th>Valor (MT)</th>
-                    <th>Método</th>
-                    <th>Conta da Empresa</th>
-                    <th>Notas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for p in payments %}
+              <div class="table-responsive">
+                <table id="tuktuk-lease-payment-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                  <thead>
                     <tr>
-                      <td>{{ p.id }}</td>
-                      <td>{{ p.payment_date }}</td>
-                      <td>
-                        {{ p.contract.tuktuk.plate_number }}
-                        <br>
-                        <small class="text-muted">
-                          {{ p.contract.tuktuk.model|default:"—" }}
-                        </small>
-                      </td>
-                      <td>
-                        {{ p.contract.driver.first_name }} {{ p.contract.driver.last_name }}
-                        <br>
-                        <small class="text-muted">
-                          {{ p.contract.driver.phone }}
-                        </small>
-                      </td>
-                      <td>#{{ p.contract.id }}</td>
-                      <td>{{ p.amount|floatformat:2 }}</td>
-                      <td>
-                        {% if p.method == "bank" %}
-                          Conta bancária
-                        {% elif p.method == "mobile" %}
-                          Carteira móvel
-                        {% elif p.method == "cash" %}
-                          Cash
-                        {% else %}
-                          {{ p.method }}
-                        {% endif %}
-                      </td>
-                      <td>
-                        {{ p.company_account.name }}
-                        <br>
-                        <small class="text-muted">
-                          {{ p.company_account.account_identifier }}
-                        </small>
-                      </td>
-                      <td>{{ p.notes|default:"—" }}</td>
+                      <th>ID</th>
+                      <th>Data</th>
+                      <th>Tuk-Tuk</th>
+                      <th>Motorista</th>
+                      <th>Contrato</th>
+                      <th>Valor (MT)</th>
+                      <th>Método</th>
+                      <th>Conta da Empresa</th>
+                      <th>Notas</th>
                     </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {% for p in payments %}
+                      <tr>
+                        <td>{{ p.id }}</td>
+                        <td>{{ p.payment_date }}</td>
+                        <td>
+                          {{ p.contract.tuktuk.plate_number }}
+                          <br />
+                          <small class="text-muted">{{ p.contract.tuktuk.model|default:'—' }}</small>
+                        </td>
+                        <td>
+                          {{ p.contract.driver.first_name }} {{ p.contract.driver.last_name }}
+                          <br />
+                          <small class="text-muted">{{ p.contract.driver.phone }}</small>
+                        </td>
+                        <td>#{{ p.contract.id }}</td>
+                        <td>{{ p.amount|floatformat:2 }}</td>
+                        <td>
+                          {% if p.method == 'bank' %}
+                            Conta bancária
+                          {% elif p.method == 'mobile' %}
+                            Carteira móvel
+                          {% elif p.method == 'cash' %}
+                            Cash
+                          {% else %}
+                            {{ p.method }}
+                          {% endif %}
+                        </td>
+                        <td>
+                          {{ p.company_account.name }}
+                          <br />
+                          <small class="text-muted">{{ p.company_account.account_identifier }}</small>
+                        </td>
+                        <td>{{ p.notes|default:'—' }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
           </div>
         </div>
-
       </div>
-
     </div>
+
+    {% include 'includes/sl_footer.html' %}
   </div>
 
-  {% include "includes/sl_footer.html" %}
-</div>
-
-<!-- MODAL: REGISTAR PAGAMENTO LEASING -->
-<div class="modal fade" id="addLeasePaymentModal" tabindex="-1" aria-labelledby="addLeasePaymentModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="addLeasePaymentForm">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addLeasePaymentModalLabel">Registar Pagamento de Leasing</h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-
-          <div class="mb-3">
-            <label class="form-label">Contrato de Leasing *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="contract" id="id_contract">
-                <option value="">— Seleccione —</option>
-                {% for c in active_contracts %}
-                  <option value="{{ c.id }}"
-                          data-weekly="{{ c.weekly_rent|floatformat:2 }}">
-                    #{{ c.id }} · {{ c.tuktuk.plate_number }} · {{ c.driver.first_name }} {{ c.driver.last_name }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-            <small class="text-muted" id="contract-weekly-hint"></small>
+  <!-- MODAL: REGISTAR PAGAMENTO LEASING -->
+  <div class="modal fade" id="addLeasePaymentModal" tabindex="-1" aria-labelledby="addLeasePaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addLeasePaymentForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addLeasePaymentModalLabel">Registar Pagamento de Leasing</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Conta da Empresa *</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="company_account" id="id_company_account">
-                <option value="">— Seleccione —</option>
-                {% for ca in company_accounts %}
-                  <option value="{{ ca.id }}">
-                    {{ ca.name }} - {{ ca.account_identifier }}
-                  </option>
-                {% endfor %}
-              </select>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Contrato de Leasing *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="contract" id="id_contract">
+                  <option value="">— Seleccione —</option>
+                  {% for c in active_contracts %}
+                    <option value="{{ c.id }}" data-weekly="{{ c.weekly_rent|floatformat:2 }}">#{{ c.id }} · {{ c.tuktuk.plate_number }} · {{ c.driver.first_name }} {{ c.driver.last_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <small class="text-muted" id="contract-weekly-hint"></small>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label">Data do Pagamento *</label>
-            <div class="input-group input-group-outline">
-              <input type="date" class="form-control" name="payment_date" id="id_payment_date"
-                     value="{{ today|date:'Y-m-d' }}">
+            <div class="mb-3">
+              <label class="form-label">Conta da Empresa *</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="company_account" id="id_company_account">
+                  <option value="">— Seleccione —</option>
+                  {% for ca in company_accounts %}
+                    <option value="{{ ca.id }}">{{ ca.name }} - {{ ca.account_identifier }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label">Valor (MT) *</label>
-            <div class="input-group input-group-outline">
-              <input type="number" step="0.01" class="form-control" name="amount" id="id_amount">
+            <div class="mb-3">
+              <label class="form-label">Data do Pagamento *</label>
+              <div class="input-group input-group-outline">
+                <input type="date" class="form-control" name="payment_date" id="id_payment_date" value="{{ today|date:'Y-m-d' }}" />
+              </div>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label">Método</label>
-            <div class="input-group input-group-outline">
-              <select class="form-select" name="method" id="id_method">
-                <option value="bank">Conta bancária</option>
-                <option value="mobile">Carteira móvel</option>
-                <option value="cash">Cash</option>
-              </select>
+            <div class="mb-3">
+              <label class="form-label">Valor (MT) *</label>
+              <div class="input-group input-group-outline">
+                <input type="number" step="0.01" class="form-control" name="amount" id="id_amount" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Método</label>
+              <div class="input-group input-group-outline">
+                <select class="form-select" name="method" id="id_method">
+                  <option value="bank">Conta bancária</option>
+                  <option value="mobile">Carteira móvel</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Notas (opcional)</label>
+              <div class="input-group input-group-outline">
+                <textarea class="form-control" rows="2" name="notes" id="id_notes"></textarea>
+              </div>
             </div>
           </div>
-
-          <div class="mb-3">
-            <label class="form-label">Notas (opcional)</label>
-            <div class="input-group input-group-outline">
-              <textarea class="form-control" rows="2" name="notes" id="id_notes"></textarea>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Guardar Pagamento</button>
           </div>
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn bg-gradient-dark">Guardar Pagamento</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
   <!-- DataTables + Buttons + SweetAlert -->
@@ -234,93 +211,99 @@
     document.addEventListener('DOMContentLoaded', function () {
       $('#tuktuk-lease-payment-table').DataTable({
         pageLength: 25,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
-        order: [[1, 'desc'], [0, 'desc']],
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'Todos']
+        ],
+        order: [
+          [1, 'desc'],
+          [0, 'desc']
+        ],
         dom: 'lBfrtip',
         buttons: [
-          { extend: 'copy',  text: 'Copiar',   className: 'btn btn-sm btn-outline-secondary' },
-          { extend: 'csv',   text: 'CSV',      className: 'btn btn-sm btn-outline-primary' },
-          { extend: 'excel', text: 'Excel',    className: 'btn btn-sm btn-outline-success' },
-          { extend: 'pdf',   text: 'PDF',      className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'copy', text: 'Copiar', className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv', text: 'CSV', className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf', text: 'PDF', className: 'btn btn-sm btn-outline-danger' },
           { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
         ],
         language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
-      const paymentModalEl = document.getElementById('addLeasePaymentModal');
-      const paymentModal = new bootstrap.Modal(paymentModalEl);
-
+      })
+    
+      const paymentModalEl = document.getElementById('addLeasePaymentModal')
+      const paymentModal = new bootstrap.Modal(paymentModalEl)
+    
       // abrir modal
       document.getElementById('btn-open-add-payment').addEventListener('click', function () {
-        document.getElementById('addLeasePaymentForm').reset();
-        document.getElementById('contract-weekly-hint').innerText = '';
+        document.getElementById('addLeasePaymentForm').reset()
+        document.getElementById('contract-weekly-hint').innerText = ''
         // default hoje
-        const todayStr = "{{ today|date:'Y-m-d' }}";
-        document.getElementById('id_payment_date').value = todayStr;
-        paymentModal.show();
-      });
-
+        const todayStr = "{{ today|date:'Y-m-d' }}"
+        document.getElementById('id_payment_date').value = todayStr
+        paymentModal.show()
+      })
+    
       // quando escolhe contrato, mostrar renda semanal
       $('#id_contract').on('change', function () {
-        const opt = this.selectedOptions[0];
+        const opt = this.selectedOptions[0]
         if (!opt) {
-          $('#contract-weekly-hint').text('');
-          return;
+          $('#contract-weekly-hint').text('')
+          return
         }
-        const weekly = opt.getAttribute('data-weekly');
+        const weekly = opt.getAttribute('data-weekly')
         if (weekly) {
-          $('#contract-weekly-hint').text('Renda semanal deste contrato: MT ' + weekly);
-          const amountInput = document.getElementById('id_amount');
+          $('#contract-weekly-hint').text('Renda semanal deste contrato: MT ' + weekly)
+          const amountInput = document.getElementById('id_amount')
           if (amountInput.value === '') {
-            amountInput.value = weekly;
+            amountInput.value = weekly
           }
         } else {
-          $('#contract-weekly-hint').text('');
+          $('#contract-weekly-hint').text('')
         }
-      });
-
+      })
+    
       // submit form via AJAX
       $('#addLeasePaymentForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const contract = $('#id_contract').val();
-        const companyAcc = $('#id_company_account').val();
-        const paymentDate = $('#id_payment_date').val();
-        const amount = $('#id_amount').val().trim();
-
+        e.preventDefault()
+    
+        const contract = $('#id_contract').val()
+        const companyAcc = $('#id_company_account').val()
+        const paymentDate = $('#id_payment_date').val()
+        const amount = $('#id_amount').val().trim()
+    
         if (!contract || !companyAcc || !paymentDate || !amount) {
-          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
-          return;
+          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
+          return
         }
-
-        const formData = $(this).serialize();
-
+    
+        const formData = $(this).serialize()
+    
         $.ajax({
           url: "{% url 'core:create_tuktuk_lease_payment' %}",
-          type: "POST",
+          type: 'POST',
           data: formData,
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {
-              paymentModal.hide();
+              paymentModal.hide()
               Swal.fire({
-                icon: "success",
-                title: "Pagamento registado",
+                icon: 'success',
+                title: 'Pagamento registado',
                 text: resp.message,
                 timer: 2200,
                 showConfirmButton: false
-              }).then(() => window.location.reload());
+              }).then(() => window.location.reload())
             } else {
-              Swal.fire("Erro", resp.message || "Falha ao registar pagamento.", "error");
+              Swal.fire('Erro', resp.message || 'Falha ao registar pagamento.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao registar pagamento.", "error");
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao registar pagamento.', 'error')
           }
-        });
-      });
-    });
+        })
+      })
+    })
   </script>
-{% endblock extra_js %}
+{% endblock %}
