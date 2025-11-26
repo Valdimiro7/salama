@@ -73,18 +73,18 @@
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
+            <!-- Categoria SEM floating label -->
             <div class="mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Categoria *</label>
-                <select class="form-select" name="category" id="id_category">
-                  <option value="">— Seleccione —</option>
-                  <option value="cash">Cash</option>
-                  <option value="mobile">Carteira móvel</option>
-                  <option value="bank">Conta bancária</option>
-                </select>
-              </div>
+              <label class="form-label d-block">Categoria *</label>
+              <select class="form-select" name="category" id="id_category">
+                <option value="">— Seleccione —</option>
+                <option value="cash">Cash</option>
+                <option value="mobile">Carteira móvel</option>
+                <option value="bank">Conta bancária</option>
+              </select>
             </div>
 
+            <!-- Nome do Tipo de Conta COM floating label -->
             <div class="mb-3">
               <div class="input-group input-group-outline">
                 <label class="form-label">Nome do Tipo de Conta *</label>
@@ -103,20 +103,6 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- DataTables -->
-  {% comment %} <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script> {% endcomment %}
-
-  <!--  Opcional: Buttons se quiseres exportar também
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-   -->
-
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -133,20 +119,37 @@
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      })
-    
+      });
+
+      // Corrigir floating label do input de nome no modal
+      const nameInput = document.getElementById('id_account_name');
+      if (nameInput) {
+        const wrapper = nameInput.closest('.input-group.input-group-outline');
+        nameInput.addEventListener('focus', function () {
+          wrapper.classList.add('is-focused');
+        });
+        nameInput.addEventListener('blur', function () {
+          wrapper.classList.remove('is-focused');
+          if (nameInput.value.trim() !== '') {
+            wrapper.classList.add('is-filled');
+          } else {
+            wrapper.classList.remove('is-filled');
+          }
+        });
+      }
+
       // Submeter modal via AJAX
       $('#addAccountTypeForm').on('submit', function (e) {
-        e.preventDefault()
-    
-        const category = $('#id_category').val()
-        const name = $('#id_account_name').val().trim()
-    
+        e.preventDefault();
+
+        const category = $('#id_category').val();
+        const name = $('#id_account_name').val().trim();
+
         if (!category || !name) {
-          Swal.fire('Validação', 'Categoria e nome são obrigatórios.', 'warning')
-          return
+          Swal.fire('Validação', 'Categoria e nome são obrigatórios.', 'warning');
+          return;
         }
-    
+
         $.ajax({
           url: "{% url 'core:create_account_type' %}",
           type: 'POST',
@@ -161,17 +164,17 @@
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => {
-                window.location.reload()
-              })
+                window.location.reload();
+              });
             } else {
-              Swal.fire('Erro', resp.message || 'Falha ao criar tipo de conta.', 'error')
+              Swal.fire('Erro', resp.message || 'Falha ao criar tipo de conta.', 'error');
             }
           },
           error: function (xhr) {
-            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de conta.', 'error')
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de conta.', 'error');
           }
-        })
-      })
-    })
+        });
+      });
+    });
   </script>
 {% endblock %}

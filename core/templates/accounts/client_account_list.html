@@ -74,35 +74,34 @@
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
+            <!-- Cliente: SEM floating label -->
             <div class="mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Cliente *</label>
-                <select class="form-select" name="member" id="id_member">
-                  <option value="">— Seleccione —</option>
-                  {% for m in members %}
-                    <option value="{{ m.id }}">
-                      {{ m.first_name }} {{ m.last_name }}
-                      {% if m.legal_name %}
-                        ({{ m.legal_name }})
-                      {% endif %}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+              <label class="form-label d-block">Cliente *</label>
+              <select class="form-select" name="member" id="id_member">
+                <option value="">— Seleccione —</option>
+                {% for m in members %}
+                  <option value="{{ m.id }}">
+                    {{ m.first_name }} {{ m.last_name }}
+                    {% if m.legal_name %}
+                      ({{ m.legal_name }})
+                    {% endif %}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
 
+            <!-- Tipo de Conta: SEM floating label -->
             <div class="mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Tipo de Conta *</label>
-                <select class="form-select" name="account_type" id="id_account_type">
-                  <option value="">— Seleccione —</option>
-                  {% for t in account_types %}
-                    <option value="{{ t.id }}">{{ t.get_category_display }} - {{ t.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
+              <label class="form-label d-block">Tipo de Conta *</label>
+              <select class="form-select" name="account_type" id="id_account_type">
+                <option value="">— Seleccione —</option>
+                {% for t in account_types %}
+                  <option value="{{ t.id }}">{{ t.get_category_display }} - {{ t.name }}</option>
+                {% endfor %}
+              </select>
             </div>
 
+            <!-- Identificador: COM floating label -->
             <div class="mb-3">
               <div class="input-group input-group-outline">
                 <label class="form-label">Número / Celular / NIB *</label>
@@ -110,6 +109,7 @@
               </div>
             </div>
 
+            <!-- Saldo inicial: COM floating label -->
             <div class="mb-3">
               <div class="input-group input-group-outline">
                 <label class="form-label">Saldo inicial (MT)</label>
@@ -133,6 +133,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // DataTable
       $('#client-accounts-table').DataTable({
         pageLength: 10,
         lengthMenu: [
@@ -143,20 +144,46 @@
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      })
-    
-      $('#addClientAccountForm').on('submit', function (e) {
-        e.preventDefault()
-    
-        const member = $('#id_member').val()
-        const accountType = $('#id_account_type').val()
-        const identifier = $('#id_account_identifier').val().trim()
-    
-        if (!member || !accountType || !identifier) {
-          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
-          return
+      });
+
+      // Corrigir floating label dos inputs de texto/número no modal
+      ['id_account_identifier', 'id_balance'].forEach(function (id) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const wrapper = input.closest('.input-group.input-group-outline');
+        if (!wrapper) return;
+
+        // Se já tiver valor (ex: 0), marcar como preenchido
+        if (input.value.trim() !== '') {
+          wrapper.classList.add('is-filled');
         }
-    
+
+        input.addEventListener('focus', function () {
+          wrapper.classList.add('is-focused');
+        });
+        input.addEventListener('blur', function () {
+          wrapper.classList.remove('is-focused');
+          if (input.value.trim() !== '') {
+            wrapper.classList.add('is-filled');
+          } else {
+            wrapper.classList.remove('is-filled');
+          }
+        });
+      });
+
+      // Submissão AJAX do formulário
+      $('#addClientAccountForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const member = $('#id_member').val();
+        const accountType = $('#id_account_type').val();
+        const identifier = $('#id_account_identifier').val().trim();
+
+        if (!member || !accountType || !identifier) {
+          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
+          return;
+        }
+
         $.ajax({
           url: "{% url 'core:create_client_account' %}",
           type: 'POST',
@@ -171,17 +198,17 @@
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => {
-                window.location.reload()
-              })
+                window.location.reload();
+              });
             } else {
-              Swal.fire('Erro', resp.message || 'Falha ao criar conta.', 'error')
+              Swal.fire('Erro', resp.message || 'Falha ao criar conta.', 'error');
             }
           },
           error: function (xhr) {
-            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar conta.', 'error')
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar conta.', 'error');
           }
-        })
-      })
-    })
+        });
+      });
+    });
   </script>
 {% endblock %}

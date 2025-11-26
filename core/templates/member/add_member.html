@@ -16,7 +16,7 @@
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <div class="input-group input-group-outline">
+                <div class="input-group input-group-outline {% if form_data.first_name %}is-filled{% endif %}">
                   <label class="form-label">Nome *</label>
                   <input type="text" name="first_name" class="form-control"
                          value="{{ form_data.first_name|default_if_none:'' }}">
@@ -25,7 +25,7 @@
               </div>
 
               <div class="col-md-6 mb-3">
-                <div class="input-group input-group-outline">
+                <div class="input-group input-group-outline {% if form_data.last_name %}is-filled{% endif %}">
                   <label class="form-label">Apelido *</label>
                   <input type="text" name="last_name" class="form-control"
                          value="{{ form_data.last_name|default_if_none:'' }}">
@@ -41,7 +41,7 @@
             </div>
 
             <div class="mb-3">
-              <div class="input-group input-group-outline">
+              <div class="input-group input-group-outline {% if form_data.legal_name %}is-filled{% endif %}">
                 <label class="form-label">Nome Legal</label>
                 <input type="text" name="legal_name" class="form-control"
                        value="{{ form_data.legal_name|default_if_none:'' }}">
@@ -50,7 +50,7 @@
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <div class="input-group input-group-outline">
+                <div class="input-group input-group-outline {% if form_data.phone %}is-filled{% endif %}">
                   <label class="form-label">Telefone *</label>
                   <input type="text" name="phone" class="form-control"
                          value="{{ form_data.phone|default_if_none:'' }}">
@@ -59,7 +59,7 @@
               </div>
 
               <div class="col-md-6 mb-3">
-                <div class="input-group input-group-outline">
+                <div class="input-group input-group-outline {% if form_data.alt_phone %}is-filled{% endif %}">
                   <label class="form-label">Telefone alternativo</label>
                   <input type="text" name="alt_phone" class="form-control"
                          value="{{ form_data.alt_phone|default_if_none:'' }}">
@@ -69,7 +69,7 @@
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <div class="input-group input-group-outline">
+                <div class="input-group input-group-outline {% if form_data.email %}is-filled{% endif %}">
                   <label class="form-label">Email</label>
                   <input type="email" name="email" class="form-control"
                          value="{{ form_data.email|default_if_none:'' }}">
@@ -77,7 +77,7 @@
               </div>
 
               <div class="col-md-6 mb-3">
-                <div class="input-group input-group-outline">
+                <div class="input-group input-group-outline {% if form_data.city %}is-filled{% endif %}">
                   <label class="form-label">Cidade</label>
                   <input type="text" name="city" class="form-control"
                          value="{{ form_data.city|default_if_none:'' }}">
@@ -86,7 +86,7 @@
             </div>
 
             <div class="mb-3">
-              <div class="input-group input-group-outline">
+              <div class="input-group input-group-outline {% if form_data.address %}is-filled{% endif %}">
                 <label class="form-label">Endereço</label>
                 <textarea name="address" class="form-control">{{ form_data.address|default_if_none:'' }}</textarea>
               </div>
@@ -94,55 +94,52 @@
 
             <div class="row">
               <div class="col-md-4 mb-3">
-                <div class="input-group input-group-outline">
-                  <label class="form-label">Profissão</label>
+                <label class="form-label">Profissão</label>
+                <div class="input-group input-group-outline {% if form_data.profession %}is-filled{% endif %}">
                   <input type="text" name="profession" class="form-control"
                          value="{{ form_data.profession|default_if_none:'' }}">
                 </div>
               </div>
 
+              <!-- Estado civil – sem floating label -->
               <div class="col-md-4 mb-3">
-                <div class="input-group input-group-outline">
-                  <label class="form-label">Estado civil</label>
-                  <select class="form-select" name="marital_status">
-                    <option value="">— Seleccione —</option>
-                    <option value="solteiro" {% if form_data.marital_status == "solteiro" %}selected{% endif %}>Solteiro(a)</option>
-                    <option value="casado" {% if form_data.marital_status == "casado" %}selected{% endif %}>Casado(a)</option>
-                    <option value="divorciado" {% if form_data.marital_status == "divorciado" %}selected{% endif %}>Divorciado(a)</option>
-                    <option value="viuvo" {% if form_data.marital_status == "viuvo" %}selected{% endif %}>Viúvo(a)</option>
-                  </select>
-                </div>
+                <label class="form-label d-block">Estado civil</label>
+                <select class="form-select" name="marital_status">
+                  <option value="">— Seleccione —</option>
+                  <option value="solteiro" {% if form_data.marital_status == "solteiro" %}selected{% endif %}>Solteiro(a)</option>
+                  <option value="casado" {% if form_data.marital_status == "casado" %}selected{% endif %}>Casado(a)</option>
+                  <option value="divorciado" {% if form_data.marital_status == "divorciado" %}selected{% endif %}>Divorciado(a)</option>
+                  <option value="viuvo" {% if form_data.marital_status == "viuvo" %}selected{% endif %}>Viúvo(a)</option>
+                </select>
               </div>
 
+              <!-- Sexo – sem floating label -->
               <div class="col-md-4 mb-3">
-                <div class="input-group input-group-outline">
-                  <label class="form-label">Sexo</label>
-                  <select class="form-select" name="gender">
-                    <option value="">— Seleccione —</option>
-                    <option value="masculino" {% if form_data.gender == "masculino" %}selected{% endif %}>Masculino</option>
-                    <option value="feminino" {% if form_data.gender == "feminino" %}selected{% endif %}>Feminino</option>
-                    <option value="outro" {% if form_data.gender == "outro" %}selected{% endif %}>Outro</option>
-                  </select>
-                </div>
+                <label class="form-label d-block">Sexo</label>
+                <select class="form-select" name="gender">
+                  <option value="">— Seleccione —</option>
+                  <option value="masculino" {% if form_data.gender == "masculino" %}selected{% endif %}>Masculino</option>
+                  <option value="feminino" {% if form_data.gender == "feminino" %}selected{% endif %}>Feminino</option>
+                  <option value="outro" {% if form_data.gender == "outro" %}selected{% endif %}>Outro</option>
+                </select>
               </div>
             </div>
 
+            <!-- Gestor responsável – sem floating label -->
             <div class="mb-3">
-              <div class="input-group input-group-outline">
-                <label class="form-label">Gestor responsável *</label>
-                <select name="manager" class="form-select">
-                  <option value="">— Seleccione —</option>
-                  {% for g in gestores %}
-                    <option value="{{ g.id }}"
-                      {% if form_data.manager == g.id|stringformat:"s" %}
-                        selected
-                      {% endif %}
-                    >
-                      {{ g.get_full_name|default:g.username }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+              <label class="form-label d-block">Gestor responsável *</label>
+              <select name="manager" class="form-select">
+                <option value="">— Seleccione —</option>
+                {% for g in gestores %}
+                  <option value="{{ g.id }}"
+                    {% if form_data.manager == g.id|stringformat:"s" %}
+                      selected
+                    {% endif %}
+                  >
+                    {{ g.get_full_name|default:g.username }}
+                  </option>
+                {% endfor %}
+              </select>
               {% if errors.manager %}<small class="text-danger">{{ errors.manager }}</small>{% endif %}
             </div>
 
@@ -158,3 +155,34 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectors = '.input-group.input-group-outline .form-control, ' +
+                      '.input-group.input-group-outline textarea';
+
+    document.querySelectorAll(selectors).forEach(function (el) {
+      const wrapper = el.closest('.input-group.input-group-outline');
+      if (!wrapper) return;
+
+      if (el.value && el.value.trim() !== '') {
+        wrapper.classList.add('is-filled');
+      }
+
+      el.addEventListener('focus', function () {
+        wrapper.classList.add('is-focused');
+      });
+
+      el.addEventListener('blur', function () {
+        wrapper.classList.remove('is-focused');
+        if (el.value && el.value.trim() !== '') {
+          wrapper.classList.add('is-filled');
+        } else {
+          wrapper.classList.remove('is-filled');
+        }
+      });
+    });
+  });
+</script>
+{% endblock extra_js %}
