@@ -17,7 +17,7 @@ from core.views.loan.active_loan import active_loans_list, active_loan_details
 from core.views.payments.loan_repayment_views import loan_repayment_list, register_repayment
 from core.views.loan.all_loan_list_views import loan_list_all, loan_details_any_status
 from core.views.tuktuk.tuktuk_views import tuktuk_list, create_tuktuk, tuktuk_lease_contract_list, create_tuktuk_lease_contract, tuktuk_lease_payment_list, create_tuktuk_lease_payment
-
+from core.views.user.user_views import user_list, toggle_user_active, update_user_groups, create_user
 
 
 
@@ -108,6 +108,12 @@ urlpatterns = [
     path("tuktuk/leasing/payments/", tuktuk_lease_payment_list, name="tuktuk_lease_payment_list"),
     path("tuktuk/leasing/payments/add/", create_tuktuk_lease_payment, name="create_tuktuk_lease_payment"),
 
+
+    # UTILIZADORES
+    path("users/", user_list, name="user_list"),
+    path("users/create/", create_user, name="create_user"),
+    path("users/<int:user_id>/toggle-active/", toggle_user_active, name="toggle_user_active"),
+    path("users/<int:user_id>/update-groups/", update_user_groups, name="update_user_groups"),
 
 
 ]

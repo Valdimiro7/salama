@@ -1,0 +1,490 @@
+{% extends "layouts/sl_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12 col-xl-10 mx-auto">
+
+      <!-- Card principal -->
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#082939;">
+            <h6 class="text-white text-capitalize ps-3">Todos os Utilizadores</h6>
+          </div>
+        </div>
+
+        <div class="card-body px-0 pb-2">
+          <div class="p-4">
+
+            <!-- Header / descrição + botão Novo Utilizador -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0">Gestão de Utilizadores</h6>
+                <p class="text-sm text-muted mb-0">
+                  Veja todos os utilizadores, estado de acesso, grupos e super permissões.
+                </p>
+              </div>
+              <div>
+                <button type="button"
+                        class="btn btn-sm btn-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#newUserModal">
+                  <i class="material-symbols-rounded me-1" style="font-size:18px;">person_add</i>
+                  Novo Utilizador
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="users-table" class="table table-bordered table-striped align-items-center mb-0" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Utilizador</th>
+                    <th>Email</th>
+                    <th>Superuser</th>
+                    <th>Status</th>
+                    <th>Grupos</th>
+                    <th style="width: 210px;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for u in users %}
+                  <tr data-id="{{ u.id }}"
+                      data-username="{{ u.get_full_name|default:u.username }}"
+                      data-group-ids="{% for g in u.groups.all %}{{ g.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                    <td>{{ u.id }}</td>
+                    <td>
+                      <strong>{{ u.get_full_name|default:u.username }}</strong><br>
+                      <small class="text-muted">@{{ u.username }}</small>
+                    </td>
+                    <td>{{ u.email|default:"—" }}</td>
+                    <td>
+                      {% if u.is_superuser %}
+                        <span class="badge bg-gradient-danger">Superuser</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Normal</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if u.is_active %}
+                        <span class="badge bg-success">Activo</span>
+                      {% else %}
+                        <span class="badge bg-danger">Inactivo</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if u.groups.all %}
+                        {% for g in u.groups.all %}
+                          <span class="badge bg-info text-dark mb-1">{{ g.name }}</span>
+                        {% endfor %}
+                      {% else %}
+                        <span class="text-xs text-muted">Sem grupo</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <!-- Botão activar/desactivar -->
+                      {% if u.id == request.user.id %}
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-xs mb-1"
+                                disabled
+                                title="Não pode desactivar a sua própria conta">
+                          <i class="material-symbols-rounded" style="font-size:16px;">person_off</i>
+                          Self
+                        </button>
+                      {% else %}
+                        {% if u.is_active %}
+                          <button type="button"
+                                  class="btn btn-outline-danger btn-xs mb-1 btn-toggle-active">
+                            <i class="material-symbols-rounded" style="font-size:16px;">person_off</i>
+                            Desactivar
+                          </button>
+                        {% else %}
+                          <button type="button"
+                                  class="btn btn-outline-success btn-xs mb-1 btn-toggle-active">
+                            <i class="material-symbols-rounded" style="font-size:16px;">person</i>
+                            Activar
+                          </button>
+                        {% endif %}
+                      {% endif %}
+
+                      <!-- Botão gerir grupos -->
+                      <button type="button"
+                              class="btn btn-outline-primary btn-xs mb-1 btn-manage-groups">
+                        <i class="material-symbols-rounded" style="font-size:16px;">groups</i>
+                        Grupos
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% include "includes/sl_footer.html" %}
+</div>
+
+<!-- MODAL: Novo Utilizador -->
+<div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="newUserModalLabel">Novo Utilizador</h6>
+        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-12">
+            <label class="form-label">Username *</label>
+            <input type="text" id="new-username" class="form-control" placeholder="username">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Primeiro Nome</label>
+            <input type="text" id="new-first-name" class="form-control">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Apelido</label>
+            <input type="text" id="new-last-name" class="form-control">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input type="email" id="new-email" class="form-control">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Palavra-passe *</label>
+            <input type="password" id="new-password1" class="form-control">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Confirmar Palavra-passe *</label>
+            <input type="password" id="new-password2" class="form-control">
+          </div>
+          <div class="col-6 mt-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="new-is-staff">
+              <label class="form-check-label" for="new-is-staff">
+                Staff (acesso ao backoffice)
+              </label>
+            </div>
+          </div>
+          <div class="col-6 mt-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="new-is-superuser">
+              <label class="form-check-label" for="new-is-superuser">
+                Superuser
+              </label>
+            </div>
+          </div>
+          <div class="col-12 mt-2">
+            <label class="form-label">Grupos (opcional)</label>
+            <select id="new-groups-select" class="form-select" multiple>
+              {% for g in groups %}
+                <option value="{{ g.id }}">{{ g.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-xs text-muted">
+              Pode atribuir um ou mais grupos ao novo utilizador.
+            </small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm" id="btn-save-new-user">
+          Gravar Utilizador
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Gestão de Grupos -->
+<div class="modal fade" id="userGroupsModal" tabindex="-1" aria-labelledby="userGroupsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="userGroupsModalLabel">Grupos do Utilizador</h6>
+        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-sm mb-2">
+          <strong>Utilizador:</strong> <span id="ug-username"></span>
+        </p>
+
+        <!-- Chips dos grupos actuais (com X para remover) -->
+        <div class="mb-2">
+          <label class="form-label mb-1">Grupos actuais</label>
+          <div id="current-groups-chips">
+            <span class="text-xs text-muted">Sem grupo</span>
+          </div>
+        </div>
+
+        <hr class="horizontal dark my-2">
+
+        <div class="mb-3">
+          <label for="user-groups-select" class="form-label">Adicionar / editar grupos</label>
+          <select id="user-groups-select" class="form-select" multiple>
+            {% for g in groups %}
+              <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+          </select>
+          <small class="text-xs text-muted">
+            Os grupos seleccionados substituem os grupos actuais do utilizador.  
+            Para remover um grupo, pode desmarcar na lista ou clicar no <strong>X</strong> no chip.
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-save-user-groups">
+          Gravar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <!-- DataTables + Buttons -->
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // ==================== DataTable ====================
+      const table = $('#users-table').DataTable({
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1],[10, 25, 50, "Todos"]],
+        order: [[1, 'asc']],
+        dom: 'lBfrtip',
+        buttons: [
+          { extend: 'copy',  text: 'Copy',  className: 'btn btn-sm btn-primary' },
+          { extend: 'csv',   text: 'CSV',   className: 'btn btn-sm btn-success' },
+          { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-warning' },
+          { extend: 'pdf',   text: 'PDF',   className: 'btn btn-sm btn-danger' },
+          { extend: 'print', text: 'Print', className: 'btn btn-sm btn-info' }
+        ],
+        language: {
+          url: "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json"
+        }
+      });
+
+      let currentUserId = null;
+
+      // ==================== Helper: actualizar chips de grupos ====================
+      function updateGroupChipsFromSelect() {
+        const $select = $('#user-groups-select');
+        const selectedOptions = $select.find('option:selected');
+        const container = $('#current-groups-chips');
+
+        container.empty();
+
+        if (!selectedOptions.length) {
+          container.html('<span class="text-xs text-muted">Sem grupo</span>');
+          return;
+        }
+
+        selectedOptions.each(function () {
+          const id = $(this).val();
+          const name = $(this).text();
+
+          const chip = $(`
+            <span class="badge bg-info text-dark me-1 mb-1 group-chip" data-group-id="${id}">
+              ${name}
+              <button type="button" class="btn-close btn-close-white btn-close-chip ms-1" aria-label="Remover" style="font-size:8px;"></button>
+            </span>
+          `);
+
+          container.append(chip);
+        });
+      }
+
+      // Quando mudar selecção no select, actualizar chips
+      $('#user-groups-select').on('change', function () {
+        updateGroupChipsFromSelect();
+      });
+
+      // Remover grupo ao clicar no X do chip
+      $(document).on('click', '.btn-close-chip', function () {
+        const chip = $(this).closest('.group-chip');
+        const gid = chip.data('group-id').toString();
+        const $select = $('#user-groups-select');
+
+        let current = $select.val() || [];
+        current = current.filter(function (v) { return v !== gid; });
+        $select.val(current);
+
+        chip.remove();
+
+        if (!$('#current-groups-chips .group-chip').length) {
+          $('#current-groups-chips').html('<span class="text-xs text-muted">Sem grupo</span>');
+        }
+      });
+
+      // ==================== TOGGLE ACTIVE ====================
+      $(document).on('click', '.btn-toggle-active', function () {
+        const tr = $(this).closest('tr');
+        const userId = tr.data('id');
+        const username = tr.data('username');
+
+        Swal.fire({
+          title: 'Alterar estado do utilizador?',
+          text: 'Utilizador: ' + username,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sim',
+          cancelButtonText: 'Cancelar'
+        }).then(result => {
+          if (!result.isConfirmed) return;
+
+          $.ajax({
+            url: "{% url 'core:toggle_user_active' 0 %}".replace('/0/', '/' + userId + '/'),
+            type: "POST",
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            success: function (resp) {
+              if (resp.success) {
+                Swal.fire({
+                  icon: "success",
+                  title: "Actualizado",
+                  text: resp.message,
+                  timer: 1800,
+                  showConfirmButton: false
+                }).then(() => window.location.reload());
+              } else {
+                Swal.fire("Erro", resp.message || "Falha ao actualizar utilizador.", "error");
+              }
+            },
+            error: function (xhr) {
+              Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao actualizar utilizador.", "error");
+            }
+          });
+        });
+      });
+
+      // ==================== MANAGE GROUPS ====================
+      const groupsModal = new bootstrap.Modal(document.getElementById('userGroupsModal'));
+
+      $(document).on('click', '.btn-manage-groups', function () {
+        const tr = $(this).closest('tr');
+        currentUserId = tr.data('id');
+        const username = tr.data('username');
+        const groupIdsStr = (tr.data('group-ids') || '').toString();
+        const groupIds = groupIdsStr ? groupIdsStr.split(',') : [];
+
+        $('#ug-username').text(username);
+
+        // Define selecção no select
+        $('#user-groups-select').val(groupIds);
+
+        // Actualiza chips
+        updateGroupChipsFromSelect();
+
+        groupsModal.show();
+      });
+
+      // ==================== SAVE GROUPS ====================
+      $('#btn-save-user-groups').on('click', function () {
+        if (!currentUserId) return;
+
+        const selectedGroups = $('#user-groups-select').val() || [];
+
+        $.ajax({
+          url: "{% url 'core:update_user_groups' 0 %}".replace('/0/', '/' + currentUserId + '/'),
+          type: "POST",
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          data: {
+            'groups[]': selectedGroups
+          },
+          traditional: true,
+          success: function (resp) {
+            if (resp.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Grupos actualizados",
+                text: resp.message,
+                timer: 1800,
+                showConfirmButton: false
+              }).then(() => window.location.reload());
+            } else {
+              Swal.fire("Erro", resp.message || "Falha ao actualizar grupos.", "error");
+            }
+          },
+          error: function (xhr) {
+            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao actualizar grupos.", "error");
+          }
+        });
+      });
+
+      // ==================== NOVO UTILIZADOR ====================
+      const newUserModal = document.getElementById('newUserModal');
+      newUserModal.addEventListener('show.bs.modal', function () {
+        // Limpa o formulário ao abrir
+        $('#new-username').val('');
+        $('#new-first-name').val('');
+        $('#new-last-name').val('');
+        $('#new-email').val('');
+        $('#new-password1').val('');
+        $('#new-password2').val('');
+        $('#new-is-staff').prop('checked', true);
+        $('#new-is-superuser').prop('checked', false);
+        $('#new-groups-select').val([]);
+      });
+
+      $('#btn-save-new-user').on('click', function () {
+        const data = {
+          username: $('#new-username').val().trim(),
+          first_name: $('#new-first-name').val().trim(),
+          last_name: $('#new-last-name').val().trim(),
+          email: $('#new-email').val().trim(),
+          password1: $('#new-password1').val(),
+          password2: $('#new-password2').val(),
+          is_staff: $('#new-is-staff').is(':checked') ? '1' : '0',
+          is_superuser: $('#new-is-superuser').is(':checked') ? '1' : '0',
+          'groups[]': $('#new-groups-select').val() || [],
+        };
+
+        $.ajax({
+          url: "{% url 'core:create_user' %}",
+          type: "POST",
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          data: data,
+          traditional: true,
+          success: function (resp) {
+            if (resp.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Utilizador criado",
+                text: resp.message,
+                timer: 1800,
+                showConfirmButton: false
+              }).then(() => {
+                $('#newUserModal').modal('hide');
+                window.location.reload();
+              });
+            } else {
+              Swal.fire("Erro", resp.message || "Falha ao criar utilizador.", "error");
+            }
+          },
+          error: function (xhr) {
+            Swal.fire("Erro", xhr.responseJSON?.message || "Falha ao criar utilizador.", "error");
+          }
+        });
+      });
+    });
+  </script>
+{% endblock extra_js %}
