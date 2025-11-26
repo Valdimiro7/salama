@@ -13,7 +13,6 @@ env/
 # Django stuff
 *.log
 staticfiles/
-media/
 local_settings.py
 
 # Configs sensíveis
