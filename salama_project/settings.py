@@ -143,3 +143,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ==========================
+# AUTENTICAÇÃO
+# ==========================
+LOGIN_URL = "login"                    # nome da URL gerada por django.contrib.auth.urls
+LOGIN_REDIRECT_URL = "core:dashboard"  # para onde vai depois de autenticar
+LOGOUT_REDIRECT_URL = "login"          # depois de fazer logout volta ao login

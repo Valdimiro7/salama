@@ -3,6 +3,7 @@ import json
 from datetime import date, timedelta
 from decimal import Decimal
 from django.db.models.functions import Coalesce, TruncMonth
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import (
     Sum,
@@ -58,6 +59,8 @@ def _get_last_6_months():
 
 #=============================================================================
 #=============================================================================
+
+@login_required
 def dashboard_view(request):
     today = timezone.localdate()
     start_30d = today - timedelta(days=30)

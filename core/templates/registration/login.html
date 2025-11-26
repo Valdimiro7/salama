@@ -1,0 +1,274 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    {% include "includes/sl_head.html" %}
+    <style>
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #082939 0, #020617 45%, #000000 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(15, 23, 42, 0.92);
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            backdrop-filter: blur(18px);
+            padding: 28px 26px 24px;
+            color: #e5e7eb;
+        }
+
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .auth-logo img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .auth-logo span {
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #cbd5f5;
+        }
+
+        .auth-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #f9fafb;
+            margin-bottom: 4px;
+        }
+
+        .auth-subtitle {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #d1d5db;
+            margin-bottom: 4px;
+        }
+
+        .form-control-auth {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background-color: rgba(15, 23, 42, 0.9);
+            color: #e5e7eb;
+            padding: 9px 12px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        .form-control-auth::placeholder {
+            color: #6b7280;
+        }
+
+        .form-control-auth:focus {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35);
+            background-color: rgba(15, 23, 42, 1);
+        }
+
+        .auth-footer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+
+        .remember-me-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            color: #9ca3af;
+        }
+
+        .auth-btn {
+            width: 100%;
+            border: none;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #0b1120;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.18s ease;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(34, 197, 94, 0.45);
+            background: linear-gradient(135deg, #16a34a, #15803d);
+        }
+
+        .auth-btn i {
+            font-size: 18px;
+        }
+
+        .auth-meta {
+            font-size: 0.77rem;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .auth-meta span {
+            color: #9ca3af;
+        }
+
+        .alert-auth {
+            font-size: 0.8rem;
+            border-radius: 10px;
+            padding: 8px 10px;
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            color: #fecaca;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .alert-auth i {
+            font-size: 16px;
+            margin-top: 1px;
+        }
+
+        .small-link {
+            font-size: 0.75rem;
+            color: #a3e635;
+            text-decoration: none;
+        }
+
+        .small-link:hover {
+            text-decoration: underline;
+            color: #bef264;
+        }
+
+        @media (max-width: 576px) {
+            .auth-card {
+                margin: 0 12px;
+                padding: 22px 18px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="auth-card">
+    <!-- Logo + título -->
+    <div class="auth-logo">
+        <img src="{% static 'assets/img/logo-ct-dark.png' %}" alt="Logo">
+        <span>SALAMA · MICROCRÉDITO</span>
+    </div>
+
+    <h1 class="auth-title">Iniciar sessão</h1>
+    <p class="auth-subtitle">
+        Aceda ao painel para gerir empréstimos, contas, despesas, rendimentos e leasing de Txopela.
+    </p>
+
+    <!-- Mensagens de erro de autenticação -->
+    {% if form.non_field_errors %}
+        <div class="alert-auth">
+            <i class="material-symbols-rounded">error</i>
+            <div>
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Username -->
+        <div class="mb-3">
+            <label class="field-label" for="id_username">Utilizador</label>
+            <input
+                type="text"
+                name="username"
+                id="id_username"
+                class="form-control-auth"
+                placeholder="Introduza o seu utilizador"
+                required
+                autofocus
+                value="{{ form.username.value|default:'' }}"
+            >
+            {% if form.username.errors %}
+                <small class="text-danger" style="font-size:0.75rem;">
+                    {{ form.username.errors.0 }}
+                </small>
+            {% endif %}
+        </div>
+
+        <!-- Password -->
+        <div class="mb-2">
+            <label class="field-label" for="id_password">Palavra-passe</label>
+            <input
+                type="password"
+                name="password"
+                id="id_password"
+                class="form-control-auth"
+                placeholder="••••••••"
+                required
+            >
+            {% if form.password.errors %}
+                <small class="text-danger" style="font-size:0.75rem;">
+                    {{ form.password.errors.0 }}
+                </small>
+            {% endif %}
+        </div>
+
+        <div class="auth-footer-row">
+            <label class="remember-me-label">
+                <input type="checkbox" name="remember_me" style="width:13px;height:13px;">
+                <span>Manter sessão iniciada nesta máquina</span>
+            </label>
+            <!-- Se quiseres no futuro: link de recuperar password -->
+            {# <a href="{% url 'password_reset' %}" class="small-link">Esqueci a palavra-passe</a> #}
+        </div>
+
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <button type="submit" class="auth-btn">
+            <i class="material-symbols-rounded">login</i>
+            Entrar
+        </button>
+    </form>
+
+    <p class="auth-meta">
+        <span>O registo de novos utilizadores é feito apenas pelo administrador no painel /admin.</span>
+    </p>
+</div>
+</body>
+</html>
