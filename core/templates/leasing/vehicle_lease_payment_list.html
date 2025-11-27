@@ -8,7 +8,7 @@
         <div class="card my-4">
           <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
             <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
-              <h6 class="text-white text-capitalize ps-3">Pagamentos Leasing · Txopela</h6>
+              <h6 class="text-white text-capitalize ps-3">Pagamentos de Leasing · Veículos</h6>
             </div>
           </div>
 
@@ -19,7 +19,7 @@
                 <div class="col-md-4 col-sm-6 mb-3">
                   <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
-                      <p class="text-sm text-muted mb-1">Nº total de pagamentos</p>
+                      <p class="text-sm text-muted mb-1">Total de pagamentos</p>
                       <h4 class="mb-0">{{ kpi_total_pagamentos }}</h4>
                     </div>
                   </div>
@@ -27,7 +27,7 @@
                 <div class="col-md-4 col-sm-6 mb-3">
                   <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
-                      <p class="text-sm text-muted mb-1">Total recebido (MT)</p>
+                      <p class="text-sm text-muted mb-1">Valor total recebido (MT)</p>
                       <h5 class="mb-0">{{ kpi_total_valor|floatformat:2 }}</h5>
                     </div>
                   </div>
@@ -35,7 +35,9 @@
                 <div class="col-md-4 col-sm-6 mb-3">
                   <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
-                      <p class="text-sm text-muted mb-1">Total recebido no mês (MT)</p>
+                      <p class="text-sm text-muted mb-1">
+                        Recebido no mês ({{ today|date:"m/Y" }})
+                      </p>
                       <h5 class="mb-0 text-success">{{ kpi_total_mes|floatformat:2 }}</h5>
                     </div>
                   </div>
@@ -44,9 +46,9 @@
 
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                  <h6 class="mb-0">Histórico de pagamentos de leasing</h6>
+                  <h6 class="mb-0">Histórico de Pagamentos de Leasing</h6>
                   <p class="text-sm text-muted mb-0">
-                    Registe e acompanhe as transferências semanais dos motoristas das Txopelas para as contas da empresa.
+                    Todos os pagamentos registados para contratos de leasing de veículos.
                   </p>
                 </div>
                 <div>
@@ -58,44 +60,45 @@
               </div>
 
               <div class="table-responsive">
-                <table id="tuktuk-lease-payment-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <table id="vehicle-lease-payment-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Data</th>
-                      <th>Txopela</th>
-                      <th>Motorista</th>
                       <th>Contrato</th>
+                      <th>Viatura</th>
+                      <th>Motorista</th>
+                      <th>Data</th>
                       <th>Valor (MT)</th>
                       <th>Método</th>
-                      <th>Conta da Empresa</th>
-                      <th>Notas</th>
+                      <th>Conta da empresa</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for p in payments %}
                       <tr>
                         <td>{{ p.id }}</td>
-                        <td>{{ p.payment_date }}</td>
-                        <td>
-                          {{ p.contract.tuktuk.plate_number }}
-                          <br />
-                          <small class="text-muted">{{ p.contract.tuktuk.model|default:'—' }}</small>
-                        </td>
-                        <td>
-                          {{ p.contract.driver.first_name }} {{ p.contract.driver.last_name }}
-                          <br />
-                          <small class="text-muted">{{ p.contract.driver.phone }}</small>
-                        </td>
                         <td>#{{ p.contract.id }}</td>
+                        <td>
+                          {{ p.contract.leased_vehicle.plate_number }}
+                          <br />
+                          <small class="text-muted">
+                            {{ p.contract.leased_vehicle.model|default:'—' }}
+                          </small>
+                        </td>
+                        <td>
+                          {{ p.driver.first_name }} {{ p.driver.last_name }}
+                          <br />
+                          <small class="text-muted">{{ p.driver.phone }}</small>
+                        </td>
+                        <td>{{ p.payment_date }}</td>
                         <td>{{ p.amount|floatformat:2 }}</td>
                         <td>
-                          {% if p.method == 'bank' %}
-                            Conta bancária
-                          {% elif p.method == 'mobile' %}
-                            Carteira móvel
-                          {% elif p.method == 'cash' %}
+                          {% if p.method == 'cash' %}
                             Cash
+                          {% elif p.method == 'bank_transfer' %}
+                            Transferência bancária
+                          {% elif p.method == 'mobile_wallet' %}
+                            Carteira móvel
                           {% else %}
                             {{ p.method }}
                           {% endif %}
@@ -103,9 +106,10 @@
                         <td>
                           {{ p.company_account.name }}
                           <br />
-                          <small class="text-muted">{{ p.company_account.account_identifier }}</small>
+                          <small class="text-muted">
+                            {{ p.company_account.account_identifier }}
+                          </small>
                         </td>
-                        <td>{{ p.notes|default:'—' }}</td>
                       </tr>
                     {% endfor %}
                   </tbody>
@@ -120,30 +124,30 @@
     {% include 'includes/sl_footer.html' %}
   </div>
 
-  <!-- MODAL: REGISTAR PAGAMENTO LEASING -->
-  <div class="modal fade" id="addLeasePaymentModal" tabindex="-1" aria-labelledby="addLeasePaymentModalLabel" aria-hidden="true">
+  <!-- MODAL: REGISTAR PAGAMENTO DE LEASING -->
+  <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form id="addLeasePaymentForm">
+        <form id="addPaymentForm">
           {% csrf_token %}
           <div class="modal-header">
-            <h5 class="modal-title" id="addLeasePaymentModalLabel">Registar Pagamento de Leasing · Txopela</h5>
+            <h5 class="modal-title" id="addPaymentModalLabel">Registar Pagamento de Leasing</h5>
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label class="form-label">Contrato de Leasing *</label>
+              <label class="form-label">Contrato *</label>
               <div class="input-group input-group-outline">
                 <select class="form-select" name="contract" id="id_contract">
                   <option value="">— Seleccione —</option>
                   {% for c in active_contracts %}
-                    <option value="{{ c.id }}" data-weekly="{{ c.weekly_rent|floatformat:2 }}">
-                      #{{ c.id }} · {{ c.tuktuk.plate_number }} · {{ c.driver.first_name }} {{ c.driver.last_name }}
+                    <option value="{{ c.id }}" data-weekly-rent="{{ c.weekly_rent|floatformat:2 }}">
+                      #{{ c.id }} · {{ c.leased_vehicle.plate_number }} · {{ c.driver.first_name }} {{ c.driver.last_name }}
                     </option>
                   {% endfor %}
                 </select>
               </div>
-              <small class="text-muted" id="contract-weekly-hint"></small>
+              <small class="text-muted" id="contract-weekly-rent-hint"></small>
             </div>
 
             <div class="mb-3">
@@ -159,9 +163,10 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Data do Pagamento *</label>
+              <label class="form-label">Data de pagamento *</label>
               <div class="input-group input-group-outline">
-                <input type="date" class="form-control" name="payment_date" id="id_payment_date" value="{{ today|date:'Y-m-d' }}" />
+                <input type="date" class="form-control" name="payment_date" id="id_payment_date"
+                       value="{{ today|date:'Y-m-d' }}" />
               </div>
             </div>
 
@@ -176,9 +181,9 @@
               <label class="form-label">Método</label>
               <div class="input-group input-group-outline">
                 <select class="form-select" name="method" id="id_method">
-                  <option value="bank">Conta bancária</option>
-                  <option value="mobile">Carteira móvel</option>
                   <option value="cash">Cash</option>
+                  <option value="bank_transfer">Transferência bancária</option>
+                  <option value="mobile_wallet">Carteira móvel</option>
                 </select>
               </div>
             </div>
@@ -192,7 +197,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn bg-gradient-dark">Guardar Pagamento</button>
+            <button type="submit" class="btn bg-gradient-dark">Registar</button>
           </div>
         </form>
       </div>
@@ -213,16 +218,13 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      $('#tuktuk-lease-payment-table').DataTable({
+      $('#vehicle-lease-payment-table').DataTable({
         pageLength: 25,
         lengthMenu: [
           [10, 25, 50, -1],
           [10, 25, 50, 'Todos']
         ],
-        order: [
-          [1, 'desc'],
-          [0, 'desc']
-        ],
+        order: [[4, 'desc'], [0, 'desc']], // ordena por data e depois por ID
         dom: 'lBfrtip',
         buttons: [
           { extend: 'copy', text: 'Copiar', className: 'btn btn-sm btn-outline-secondary' },
@@ -235,56 +237,58 @@
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
       })
-    
-      const paymentModalEl = document.getElementById('addLeasePaymentModal')
+
+      const paymentModalEl = document.getElementById('addPaymentModal')
       const paymentModal = new bootstrap.Modal(paymentModalEl)
-    
+
       // abrir modal
       document.getElementById('btn-open-add-payment').addEventListener('click', function () {
-        document.getElementById('addLeasePaymentForm').reset()
-        document.getElementById('contract-weekly-hint').innerText = ''
-        const todayStr = "{{ today|date:'Y-m-d' }}"
-        document.getElementById('id_payment_date').value = todayStr
+        document.getElementById('addPaymentForm').reset()
+        document.getElementById('contract-weekly-rent-hint').innerText = ''
+        const todayStr = "{{ today|date:'Y-m-d'|default:None }}"
+        if (todayStr) {
+          document.getElementById('id_payment_date').value = todayStr
+        }
         paymentModal.show()
       })
-    
-      // quando escolhe contrato, mostrar renda semanal
+
+      // quando escolhe contrato, mostrar renda semanal padrão
       $('#id_contract').on('change', function () {
         const opt = this.selectedOptions[0]
         if (!opt) {
-          $('#contract-weekly-hint').text('')
+          $('#contract-weekly-rent-hint').text('')
           return
         }
-        const weekly = opt.getAttribute('data-weekly')
-        if (weekly) {
-          $('#contract-weekly-hint').text('Renda semanal deste contrato: MT ' + weekly)
+        const weeklyRent = opt.getAttribute('data-weekly-rent')
+        if (weeklyRent) {
+          $('#contract-weekly-rent-hint').text('Renda semanal padrão deste contrato: MT ' + weeklyRent)
           const amountInput = document.getElementById('id_amount')
           if (amountInput.value === '') {
-            amountInput.value = weekly
+            amountInput.value = weeklyRent
           }
         } else {
-          $('#contract-weekly-hint').text('')
+          $('#contract-weekly-rent-hint').text('')
         }
       })
-    
+
       // submit form via AJAX
-      $('#addLeasePaymentForm').on('submit', function (e) {
+      $('#addPaymentForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const contract = $('#id_contract').val()
         const companyAcc = $('#id_company_account').val()
         const paymentDate = $('#id_payment_date').val()
         const amount = $('#id_amount').val().trim()
-    
+
         if (!contract || !companyAcc || !paymentDate || !amount) {
           Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
           return
         }
-    
+
         const formData = $(this).serialize()
-    
+
         $.ajax({
-          url: "{% url 'core:create_tuktuk_lease_payment' %}",
+          url: "{% url 'core:create_vehicle_lease_payment' %}",
           type: 'POST',
           data: formData,
           headers: { 'X-CSRFToken': '{{ csrf_token }}' },

@@ -12,7 +12,7 @@
             Salama · Microcrédito · Dashboard
           </h3>
           <p class="mb-0 text-sm text-muted">
-            Visão geral da carteira de empréstimos, reembolsos, leasing Tuk-Tuk e fluxo de caixa.
+            Visão geral da carteira de empréstimos, reembolsos, leasing de veículos e fluxo de caixa.
           </p>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -113,21 +113,21 @@
       </div>
     </div>
 
-    <!-- Leasing Tuk-Tuk activos -->
+    <!-- Leasing de veículos activos -->
     <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body py-3 px-3 d-flex flex-column">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <p class="text-xs text-muted mb-0 text-uppercase">Leasing Tuk-Tuk activos</p>
+            <p class="text-xs text-muted mb-0 text-uppercase">Leasing de veículos activos</p>
             <span class="icon icon-xs icon-shape bg-gradient-warning text-center border-radius-md">
-              <i class="material-symbols-rounded text-white" style="font-size:18px;">two_wheeler</i>
+              <i class="material-symbols-rounded text-white" style="font-size:18px;">directions_car</i>
             </span>
           </div>
           <h5 class="mb-1">
-            {{ kpi_tuktuk_active_contracts|default:0 }}
+            {{ kpi_vehicle_active_contracts|default:0 }}
           </h5>
           <span class="text-xs text-muted">
-            {{ kpi_tuktuk_month_income|default:0|floatformat:2 }} MT recebidos este mês.
+            {{ kpi_vehicle_month_income|default:0|floatformat:2 }} MT recebidos este mês.
           </span>
         </div>
       </div>
@@ -225,8 +225,8 @@
               <strong>{{ kpi_mc_income_30d|default:0|floatformat:2 }} MT</strong>
             </p>
             <p class="mb-0">
-              <span class="badge bg-secondary me-1">&nbsp;</span> Leasing Tuk-Tuk:
-              <strong>{{ kpi_tuktuk_income_30d|default:0|floatformat:2 }} MT</strong>
+              <span class="badge bg-secondary me-1">&nbsp;</span> Leasing de veículos:
+              <strong>{{ kpi_vehicle_income_30d|default:0|floatformat:2 }} MT</strong>
             </p>
           </div>
         </div>
@@ -312,7 +312,7 @@
       <div class="card h-100">
         <div class="card-header pb-0">
           <h6 class="mb-1">Entradas recentes</h6>
-          <p class="text-xs text-muted mb-0">Reembolsos de empréstimos e leasing Tuk-Tuk</p>
+          <p class="text-xs text-muted mb-0">Reembolsos de empréstimos e leasing de veículos</p>
         </div>
         <div class="card-body px-0 pb-0">
           <div class="table-responsive">
@@ -331,8 +331,8 @@
                     <td class="ps-3 text-xs">
                       {% if item.source_type == "loan_repayment" %}
                         <span class="badge bg-success text-xxs">Reembolso</span>
-                      {% elif item.source_type == "tuktuk_lease_payment" %}
-                        <span class="badge bg-dark text-xxs">Leasing Tuk-Tuk</span>
+                      {% elif item.source_type == "vehicle_lease_payment" %}
+                        <span class="badge bg-dark text-xxs">Leasing veículo</span>
                       {% else %}
                         <span class="badge bg-secondary text-xxs">{{ item.source_type|default:"Outro" }}</span>
                       {% endif %}
@@ -362,9 +362,9 @@
     </div>
   </div>
 
-  <!-- PRÓXIMAS PRESTAÇÕES / RISCO & RESUMO TUK-TUK -->
+  <!-- PRÓXIMAS PRESTAÇÕES / RISCO & RESUMO LEASING -->
   <div class="row mb-4">
-    <!-- Próximas prestações -->
+    <!-- Próximos vencimentos -->
     <div class="col-xl-5 mb-4">
       <div class="card h-100">
         <div class="card-header pb-0">
@@ -422,15 +422,15 @@
       </div>
     </div>
 
-    <!-- Resumo Tuk-Tuk -->
+    <!-- Resumo Leasing de Veículos -->
     <div class="col-xl-7 mb-4">
       <div class="card h-100">
         <div class="card-header pb-0 d-flex justify-content-between align-items-center">
           <div>
-            <h6 class="mb-1">Resumo Leasing · Tuk-Tuk</h6>
+            <h6 class="mb-1">Resumo Leasing · Veículos</h6>
             <p class="text-xs text-muted mb-0">Contratos, pagamentos e saldos em aberto</p>
           </div>
-          <a href="{% url 'core:tuktuk_lease_contract_list' %}" class="text-xs text-primary text-decoration-none">
+          <a href="{% url 'core:vehicle_lease_contract_list' %}" class="text-xs text-primary text-decoration-none">
             Gerir contratos
           </a>
         </div>
@@ -439,7 +439,7 @@
             <table class="table align-items-center mb-0">
               <thead>
                 <tr>
-                  <th class="text-xs text-secondary text-uppercase fw-bold ps-3">Tuk-Tuk</th>
+                  <th class="text-xs text-secondary text-uppercase fw-bold ps-3">Viatura</th>
                   <th class="text-xs text-secondary text-uppercase fw-bold">Motorista</th>
                   <th class="text-xs text-secondary text-uppercase fw-bold text-end">Semanal (MT)</th>
                   <th class="text-xs text-secondary text-uppercase fw-bold text-end">Recebido (MT)</th>
@@ -447,10 +447,10 @@
                 </tr>
               </thead>
               <tbody>
-                {% for c in tuktuk_dashboard_contracts %}
+                {% for c in vehicle_dashboard_contracts %}
                   <tr>
                     <td class="ps-3 text-sm">
-                      {{ c.tuktuk_label }}
+                      {{ c.vehicle_label }}
                     </td>
                     <td class="text-sm">
                       {{ c.driver_name }}
@@ -623,7 +623,7 @@
               maxBarThickness: 20
             },
             {
-              label: 'Leasing Tuk-Tuk',
+              label: 'Leasing de veículos',
               data: mcVsLeasingLeas,
               backgroundColor: '#6d4c41',
               borderRadius: 4,

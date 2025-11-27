@@ -60,7 +60,7 @@
       </div>
     </div>
 
-    {% include 'includes/footer.html' %}
+    {% include 'includes/sl_footer.html' %}
   </div>
 
   <!-- MODAL: ADICIONAR CONTA DO CLIENTE -->
@@ -144,46 +144,46 @@
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      });
-
+      })
+    
       // Corrigir floating label dos inputs de texto/número no modal
-      ['id_account_identifier', 'id_balance'].forEach(function (id) {
-        const input = document.getElementById(id);
-        if (!input) return;
-        const wrapper = input.closest('.input-group.input-group-outline');
-        if (!wrapper) return;
-
+      ;['id_account_identifier', 'id_balance'].forEach(function (id) {
+        const input = document.getElementById(id)
+        if (!input) return
+        const wrapper = input.closest('.input-group.input-group-outline')
+        if (!wrapper) return
+    
         // Se já tiver valor (ex: 0), marcar como preenchido
         if (input.value.trim() !== '') {
-          wrapper.classList.add('is-filled');
+          wrapper.classList.add('is-filled')
         }
-
+    
         input.addEventListener('focus', function () {
-          wrapper.classList.add('is-focused');
-        });
+          wrapper.classList.add('is-focused')
+        })
         input.addEventListener('blur', function () {
-          wrapper.classList.remove('is-focused');
+          wrapper.classList.remove('is-focused')
           if (input.value.trim() !== '') {
-            wrapper.classList.add('is-filled');
+            wrapper.classList.add('is-filled')
           } else {
-            wrapper.classList.remove('is-filled');
+            wrapper.classList.remove('is-filled')
           }
-        });
-      });
-
+        })
+      })
+    
       // Submissão AJAX do formulário
       $('#addClientAccountForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const member = $('#id_member').val();
-        const accountType = $('#id_account_type').val();
-        const identifier = $('#id_account_identifier').val().trim();
-
+        e.preventDefault()
+    
+        const member = $('#id_member').val()
+        const accountType = $('#id_account_type').val()
+        const identifier = $('#id_account_identifier').val().trim()
+    
         if (!member || !accountType || !identifier) {
-          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
-          return;
+          Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
+          return
         }
-
+    
         $.ajax({
           url: "{% url 'core:create_client_account' %}",
           type: 'POST',
@@ -198,17 +198,17 @@
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => {
-                window.location.reload();
-              });
+                window.location.reload()
+              })
             } else {
-              Swal.fire('Erro', resp.message || 'Falha ao criar conta.', 'error');
+              Swal.fire('Erro', resp.message || 'Falha ao criar conta.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar conta.', 'error');
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar conta.', 'error')
           }
-        });
-      });
-    });
+        })
+      })
+    })
   </script>
 {% endblock %}

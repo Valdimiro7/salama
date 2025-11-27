@@ -17,7 +17,7 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
-                  <p class="text-sm text-muted mb-0">Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas, Desembolsos de Empréstimos, Reembolsos de Empréstimos, Pagamentos de Leasing Tuk-Tuk e ajustes manuais.</p>
+                  <p class="text-sm text-muted mb-0">Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas, Desembolsos de Empréstimos, Reembolsos de Empréstimos, Pagamentos de Leasing de Veículos e ajustes manuais.</p>
                 </div>
                 <!-- futuro: botão Nova Transacção manual -->
               </div>
@@ -64,8 +64,8 @@
                             Desembolso de Empréstimo
                           {% elif t.source_type == 'loan_repayment' %}
                             Reembolso de Empréstimo
-                          {% elif t.source_type == 'tuktuk_lease_payment' %}
-                            Pagamento Leasing Tuk-Tuk
+                          {% elif t.source_type == 'vehicle_lease_payment' %}
+                            Pagamento Leasing de Veículo
                           {% elif t.source_type == 'opening_balance' %}
                             Saldo Inicial
                           {% elif t.source_type == 'adjustment' %}
@@ -89,7 +89,7 @@
       </div>
     </div>
 
-    {% include 'includes/footer.html' %}
+    {% include 'includes/sl_footer.html' %}
   </div>
 {% endblock %}
 

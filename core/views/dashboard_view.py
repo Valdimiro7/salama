@@ -2,6 +2,7 @@ from django.shortcuts import render
 import json
 from datetime import date, timedelta
 from decimal import Decimal
+
 from django.db.models.functions import Coalesce, TruncMonth
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -15,21 +16,16 @@ from django.db.models import (
     Subquery,
     ExpressionWrapper,
 )
+
 from core.models import (
     Loan,
     LoanRepayment,
     LoanDisbursement,
     LoanPaymentRequest,
-    TukTukLeaseContract,
-    TukTukLeasePayment,
+    VehicleLeaseContract,
+    VehicleLeasePayment,
     CompanyAccount,
 )
-
-
-
-#=============================================================================
-#=============================================================================
-
 
 
 #=============================================================================
@@ -57,8 +53,10 @@ def _get_last_6_months():
     months.reverse()
     return months
 
+
 #=============================================================================
 #=============================================================================
+
 
 @login_required
 def dashboard_view(request):
@@ -153,13 +151,13 @@ def dashboard_view(request):
     today_repayments_count = today_repayments_qs.count()
 
     # ==========================
-    # KPI 5 – Leasing Tuk-Tuk (contratos activos + renda recebida no mês)
+    # KPI 5 – Leasing de Veículos (contratos activos + renda recebida no mês)
     # ==========================
-    tuktuk_active_contracts = TukTukLeaseContract.objects.filter(status="active").count()
+    vehicle_active_contracts = VehicleLeaseContract.objects.filter(status="active").count()
 
     start_month = date(today.year, today.month, 1)
-    tuktuk_month_income = (
-        TukTukLeasePayment.objects.filter(
+    vehicle_month_income = (
+        VehicleLeasePayment.objects.filter(
             payment_date__gte=start_month, payment_date__lte=today
         ).aggregate(
             total=Coalesce(
@@ -186,9 +184,8 @@ def dashboard_view(request):
     )
 
     # ==========================
-    # Indicador de variação da carteira (exemplo: desembolsos mês actual vs anterior)
+    # Indicador de variação da carteira (desembolsos mês actual vs anterior)
     # ==========================
-    # Mês actual
     this_month_start = start_month
     if today.month == 12:
         next_month_start = date(today.year + 1, 1, 1)
@@ -209,7 +206,6 @@ def dashboard_view(request):
         or Decimal("0")
     )
 
-    # Mês anterior
     if this_month_start.month == 1:
         prev_month_start = date(this_month_start.year - 1, 12, 1)
     else:
@@ -237,7 +233,6 @@ def dashboard_view(request):
         ) * 100.0
         kpi_portfolio_change_label = f"{change:+.1f}% vs mês anterior"
     else:
-        # Sem base de comparação
         kpi_portfolio_change_label = "— vs mês anterior"
 
     # ==========================
@@ -249,7 +244,7 @@ def dashboard_view(request):
     )
 
     # ==========================
-    # Entradas recentes (Reembolsos + Leasing Tuk-Tuk)
+    # Entradas recentes (Reembolsos + Leasing de Veículos)
     # ==========================
     recent_cash_items = []
 
@@ -268,16 +263,16 @@ def dashboard_view(request):
             }
         )
 
-    tuktuk_pay_qs = (
-        TukTukLeasePayment.objects.select_related("contract__tuktuk", "driver")
+    vehicle_pay_qs = (
+        VehicleLeasePayment.objects.select_related("contract__leased_vehicle", "driver")
         .filter(payment_date__gte=start_30d)
         .order_by("-payment_date")[:20]
     )
-    for p in tuktuk_pay_qs:
+    for p in vehicle_pay_qs:
         recent_cash_items.append(
             {
-                "source_type": "tuktuk_lease_payment",
-                "label": f"Tuk-Tuk {p.contract.tuktuk.plate_number} · {p.driver.first_name} {p.driver.last_name}",
+                "source_type": "vehicle_lease_payment",
+                "label": f"Viatura {p.contract.leased_vehicle.plate_number} · {p.driver.first_name} {p.driver.last_name}",
                 "amount": p.amount,
                 "tx_date": p.payment_date,
             }
@@ -290,7 +285,6 @@ def dashboard_view(request):
     # ==========================
     # Próximos vencimentos (LoanPaymentRequest pendentes)
     # ==========================
-    # Inclui futuros e ligeiramente em atraso
     upcoming_qs = (
         LoanPaymentRequest.objects.select_related("loan", "member")
         .filter(status="pending")
@@ -310,16 +304,16 @@ def dashboard_view(request):
         )
 
     # ==========================
-    # Resumo Leasing Tuk-Tuk (contratos activos)
+    # Resumo Leasing de Veículos (contratos activos)
     # ==========================
-    tuktuk_contracts = (
-        TukTukLeaseContract.objects.filter(status="active")
-        .select_related("tuktuk", "driver")
+    vehicle_contracts = (
+        VehicleLeaseContract.objects.filter(status="active")
+        .select_related("leased_vehicle", "driver")
         .order_by("start_date")
     )
 
     payments_by_contract = (
-        TukTukLeasePayment.objects.filter(contract__in=tuktuk_contracts)
+        VehicleLeasePayment.objects.filter(contract__in=vehicle_contracts)
         .values("contract_id")
         .annotate(
             total=Coalesce(
@@ -329,12 +323,10 @@ def dashboard_view(request):
             )
         )
     )
-    payments_map = {
-        row["contract_id"]: row["total"] for row in payments_by_contract
-    }
+    payments_map = {row["contract_id"]: row["total"] for row in payments_by_contract}
 
-    tuktuk_dashboard_contracts = []
-    for c in tuktuk_contracts:
+    vehicle_dashboard_contracts = []
+    for c in vehicle_contracts:
         received = payments_map.get(c.id, Decimal("0"))
 
         # Estimativa de semanas decorridas desde o início
@@ -343,9 +335,9 @@ def dashboard_view(request):
         expected = c.weekly_rent * weeks_elapsed
         balance = expected - received  # >0 em atraso, <0 adiantado
 
-        tuktuk_dashboard_contracts.append(
+        vehicle_dashboard_contracts.append(
             {
-                "tuktuk_label": str(c.tuktuk),
+                "vehicle_label": str(c.leased_vehicle),
                 "driver_name": str(c.driver),
                 "weekly_amount": c.weekly_rent,
                 "received_amount": received,
@@ -356,7 +348,7 @@ def dashboard_view(request):
     # ==========================
     # Gráfico 1: Linha – Desembolsos vs Reembolsos (últimos 6 meses)
     # ==========================
-    months = _get_last_6_months()  # lista de date(YYYY,MM,1)
+    months = _get_last_6_months()
 
     disb_by_month = (
         LoanDisbursement.objects.filter(disburse_date__gte=months[0])
@@ -370,7 +362,6 @@ def dashboard_view(request):
             )
         )
     )
-    # AQUI – sem .date()
     disb_map = {row["m"]: row["total"] for row in disb_by_month}
 
     repay_by_month = (
@@ -385,13 +376,11 @@ def dashboard_view(request):
             )
         )
     )
-    # AQUI – sem .date()
     repay_map = {row["m"]: row["total"] for row in repay_by_month}
 
     chart_loan_cashflow_labels = [m.strftime("%b/%Y") for m in months]
     chart_loan_cashflow_disbursed = [float(disb_map.get(m, 0)) for m in months]
     chart_loan_cashflow_repaid = [float(repay_map.get(m, 0)) for m in months]
-
 
     # ==========================
     # Gráfico 2: Doughnut – carteira por status
@@ -430,8 +419,8 @@ def dashboard_view(request):
         )["total"]
         or Decimal("0")
     )
-    tuktuk_income_30d = (
-        TukTukLeasePayment.objects.filter(payment_date__gte=start_30d).aggregate(
+    vehicle_income_30d = (
+        VehicleLeasePayment.objects.filter(payment_date__gte=start_30d).aggregate(
             total=Coalesce(
                 Sum("amount"),
                 Decimal("0"),
@@ -443,7 +432,7 @@ def dashboard_view(request):
 
     chart_mc_vs_leasing_labels = ["Últimos 30 dias"]
     chart_mc_vs_leasing_mc_values = [float(mc_income_30d)]
-    chart_mc_vs_leasing_leasing_values = [float(tuktuk_income_30d)]
+    chart_mc_vs_leasing_leasing_values = [float(vehicle_income_30d)]
 
     # ==========================
     # Contexto final
@@ -451,6 +440,7 @@ def dashboard_view(request):
     context = {
         "page_title": "Salama · Microcrédito",
         "segment": "dashboard",
+
         # KPIs
         "kpi_portfolio_total": portfolio_total,
         "kpi_portfolio_change_label": kpi_portfolio_change_label,
@@ -459,20 +449,22 @@ def dashboard_view(request):
         "kpi_interest_to_receive": interest_to_receive,
         "kpi_today_repayments": today_repayments_amount,
         "kpi_today_repayments_count": today_repayments_count,
-        "kpi_tuktuk_active_contracts": tuktuk_active_contracts,
-        "kpi_tuktuk_month_income": tuktuk_month_income,
+        "kpi_vehicle_active_contracts": vehicle_active_contracts,
+        "kpi_vehicle_month_income": vehicle_month_income,
         "kpi_company_accounts_balance": company_accounts_balance,
         "kpi_status_active_count": status_active_count,
         "kpi_status_pending_count": status_pending_count,
         "kpi_status_closed_count": status_closed_count,
         "kpi_status_cancelled_count": status_cancelled_count,
         "kpi_mc_income_30d": mc_income_30d,
-        "kpi_tuktuk_income_30d": tuktuk_income_30d,
+        "kpi_vehicle_income_30d": vehicle_income_30d,
+
         # Listas
         "recent_loans": recent_loans,
         "recent_cash_in": recent_cash_in,
         "upcoming_due_loans": upcoming_due_loans,
-        "tuktuk_dashboard_contracts": tuktuk_dashboard_contracts,
+        "vehicle_dashboard_contracts": vehicle_dashboard_contracts,
+
         # Gráficos
         "chart_loan_cashflow_labels": json.dumps(chart_loan_cashflow_labels),
         "chart_loan_cashflow_disbursed": json.dumps(chart_loan_cashflow_disbursed),
@@ -480,30 +472,10 @@ def dashboard_view(request):
         "chart_loan_status_labels": json.dumps(chart_loan_status_labels),
         "chart_loan_status_values": json.dumps(chart_loan_status_values),
         "chart_mc_vs_leasing_labels": json.dumps(chart_mc_vs_leasing_labels),
-        "chart_mc_vs_leasing_mc_values": json.dumps(
-            chart_mc_vs_leasing_mc_values
-        ),
+        "chart_mc_vs_leasing_mc_values": json.dumps(chart_mc_vs_leasing_mc_values),
         "chart_mc_vs_leasing_leasing_values": json.dumps(
             chart_mc_vs_leasing_leasing_values
         ),
     }
 
     return render(request, "dashboard.html", context)
-
-
-#=============================================================================
-#=============================================================================
-
-
-
-#=============================================================================
-#=============================================================================
-
-
-
-#=============================================================================
-#=============================================================================
-
-
-#=============================================================================
-#=============================================================================

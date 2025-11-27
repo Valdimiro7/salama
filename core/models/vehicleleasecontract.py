@@ -1,11 +1,12 @@
 from django.db import models
 from django.conf import settings
-from .tuktuk import TukTuk
+
+from .leasedvehicle import LeasedVehicle
 from .member import Member
 from .companyaccount import CompanyAccount
 
 
-class TukTukLeaseContract(models.Model):
+class VehicleLeaseContract(models.Model):
     STATUS_CHOICES = (
         ("active", "Activo"),
         ("finished", "Terminado"),
@@ -13,21 +14,25 @@ class TukTukLeaseContract(models.Model):
     )
 
     id = models.BigAutoField(primary_key=True)
-    tuktuk = models.ForeignKey(
-        TukTuk,
+
+    leased_vehicle = models.ForeignKey(
+        LeasedVehicle,
         on_delete=models.PROTECT,
         related_name="lease_contracts",
+        verbose_name="Viatura em leasing",
     )
+
     driver = models.ForeignKey(
         Member,
         on_delete=models.PROTECT,
-        related_name="tuktuk_lease_contracts",
+        related_name="vehicle_lease_contracts",
         help_text="Motorista / cliente responsável pelos pagamentos semanais.",
     )
+
     company_account = models.ForeignKey(
         CompanyAccount,
         on_delete=models.PROTECT,
-        related_name="tuktuk_lease_contracts",
+        related_name="vehicle_lease_contracts",
         help_text="Conta da empresa que recebe as prestações.",
     )
 
@@ -37,11 +42,12 @@ class TukTukLeaseContract(models.Model):
     weekly_rent = models.DecimalField(
         "Valor semanal (MT)", max_digits=15, decimal_places=2
     )
+
     payment_weekday = models.PositiveSmallIntegerField(
         "Dia da semana para pagamento",
         blank=True,
         null=True,
-        help_text="0 = Segunda, 6 = Domingo (opcional, só para controlo).",
+        help_text="1 = Segunda, 7 = Domingo (opcional, só para controlo).",
     )
 
     status = models.CharField(
@@ -54,7 +60,7 @@ class TukTukLeaseContract(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name="created_tuktuk_contracts",
+        related_name="created_vehicle_lease_contracts",
         blank=True,
         null=True,
     )
@@ -63,7 +69,8 @@ class TukTukLeaseContract(models.Model):
 
     class Meta:
         managed = False
-        db_table = "sl_tuktuk_lease_contracts"
+        # Mantemos a mesma tabela antiga, para não partir a BD
+        db_table = "sl_vehicle_lease_contracts"
 
     def __str__(self):
-        return f"Contrato #{self.id} · {self.tuktuk} · {self.driver}"
+        return f"Contrato #{self.id} · {self.leased_vehicle} · {self.driver}"

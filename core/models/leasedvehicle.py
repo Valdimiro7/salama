@@ -1,6 +1,9 @@
+# core/models.py
+
 from django.db import models
 
-class TukTuk(models.Model):
+
+class LeasedVehicle(models.Model):
     STATUS_CHOICES = (
         ("available", "Disponível"),
         ("leased", "Em leasing"),
@@ -28,7 +31,7 @@ class TukTuk(models.Model):
 
     class Meta:
         managed = False
-        db_table = "sl_tuktuks"
+        db_table = "sl_leased_vehicles"
 
     def __str__(self):
         return f"{self.plate_number} · {self.model or ''}".strip()

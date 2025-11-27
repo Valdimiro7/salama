@@ -8,7 +8,7 @@
         <div class="card my-4">
           <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
             <div class="shadow-dark border-radius-lg pt-4 pb-3" style="background-color:#064E3B;">
-              <h6 class="text-white text-capitalize ps-3">Frota de Txopelas</h6>
+              <h6 class="text-white text-capitalize ps-3">Frota de Veículos em Leasing</h6>
             </div>
           </div>
 
@@ -19,7 +19,7 @@
                 <div class="col-md-3 col-sm-6 mb-3">
                   <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
-                      <p class="text-sm text-muted mb-1">Total de Txopelas</p>
+                      <p class="text-sm text-muted mb-1">Total de viaturas</p>
                       <h4 class="mb-0">{{ kpi_total }}</h4>
                     </div>
                   </div>
@@ -52,21 +52,21 @@
 
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                  <h6 class="mb-0">Lista de Txopelas</h6>
+                  <h6 class="mb-0">Lista de Veículos em Leasing</h6>
                   <p class="text-sm text-muted mb-0">
-                    Gere a frota de Txopelas utilizadas para contratos de leasing.
+                    Gere a frota de viaturas ligadas a contratos de leasing.
                   </p>
                 </div>
                 <div>
-                  <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-tuktuk">
+                  <button type="button" class="btn bg-gradient-dark btn-sm" id="btn-open-add-vehicle">
                     <i class="material-symbols-rounded me-1" style="font-size:18px;">add</i>
-                    Adicionar Txopela
+                    Adicionar viatura
                   </button>
                 </div>
               </div>
 
               <div class="table-responsive">
-                <table id="tuktuk-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
+                <table id="vehicle-lease-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -79,20 +79,20 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {% for t in tuktuks %}
+                    {% for v in vehicles %}
                       <tr>
-                        <td>{{ t.id }}</td>
-                        <td>{{ t.plate_number }}</td>
-                        <td>{{ t.model|default:'—' }}</td>
-                        <td>{{ t.year|default:'—' }}</td>
-                        <td>{{ t.chassis_number|default:'—' }}</td>
-                        <td>{{ t.weekly_rent_default|floatformat:2 }}</td>
+                        <td>{{ v.id }}</td>
+                        <td>{{ v.plate_number }}</td>
+                        <td>{{ v.model|default:'—' }}</td>
+                        <td>{{ v.year|default:'—' }}</td>
+                        <td>{{ v.chassis_number|default:'—' }}</td>
+                        <td>{{ v.weekly_rent_default|floatformat:2 }}</td>
                         <td>
-                          {% if t.status == 'available' %}
+                          {% if v.status == 'available' %}
                             <span class="badge bg-success">Disponível</span>
-                          {% elif t.status == 'leased' %}
+                          {% elif v.status == 'leased' %}
                             <span class="badge bg-primary">Em leasing</span>
-                          {% elif t.status == 'maintenance' %}
+                          {% elif v.status == 'maintenance' %}
                             <span class="badge bg-warning text-dark">Manutenção</span>
                           {% else %}
                             <span class="badge bg-secondary">Inactivo</span>
@@ -112,14 +112,14 @@
     {% include 'includes/sl_footer.html' %}
   </div>
 
-  <!-- MODAL: ADICIONAR TXOPELA -->
-  <div class="modal fade" id="addTukTukModal" tabindex="-1" aria-labelledby="addTukTukModalLabel" aria-hidden="true">
+  <!-- MODAL: ADICIONAR VIATURA -->
+  <div class="modal fade" id="addVehicleModal" tabindex="-1" aria-labelledby="addVehicleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form id="addTukTukForm">
+        <form id="addVehicleForm">
           {% csrf_token %}
           <div class="modal-header">
-            <h5 class="modal-title" id="addTukTukModalLabel">Adicionar Txopela</h5>
+            <h5 class="modal-title" id="addVehicleModalLabel">Adicionar viatura em leasing</h5>
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -200,7 +200,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      $('#tuktuk-table').DataTable({
+      $('#vehicle-lease-table').DataTable({
         pageLength: 25,
         lengthMenu: [
           [10, 25, 50, -1],
@@ -220,29 +220,29 @@
         }
       })
 
-      const addModalEl = document.getElementById('addTukTukModal')
+      const addModalEl = document.getElementById('addVehicleModal')
       const addModal = new bootstrap.Modal(addModalEl)
 
       // abrir modal
-      document.getElementById('btn-open-add-tuktuk').addEventListener('click', function () {
-        document.getElementById('addTukTukForm').reset()
+      document.getElementById('btn-open-add-vehicle').addEventListener('click', function () {
+        document.getElementById('addVehicleForm').reset()
         addModal.show()
       })
 
       // submit form via AJAX
-      $('#addTukTukForm').on('submit', function (e) {
+      $('#addVehicleForm').on('submit', function (e) {
         e.preventDefault()
 
         const plate = $('#id_plate_number').val().trim()
         if (!plate) {
-          Swal.fire('Validação', 'Informe a matrícula da Txopela.', 'warning')
+          Swal.fire('Validação', 'Informe a matrícula da viatura.', 'warning')
           return
         }
 
         const formData = $(this).serialize()
 
         $.ajax({
-          url: "{% url 'core:create_tuktuk' %}",
+          url: "{% url 'core:create_leased_vehicle' %}",
           type: 'POST',
           data: formData,
           headers: { 'X-CSRFToken': '{{ csrf_token }}' },
@@ -251,17 +251,17 @@
               addModal.hide()
               Swal.fire({
                 icon: 'success',
-                title: 'Txopela criada',
+                title: 'Viatura criada',
                 text: resp.message,
                 timer: 2000,
                 showConfirmButton: false
               }).then(() => window.location.reload())
             } else {
-              Swal.fire('Erro', resp.message || 'Falha ao criar Txopela.', 'error')
+              Swal.fire('Erro', resp.message || 'Falha ao criar viatura.', 'error')
             }
           },
           error: function (xhr) {
-            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar Txopela.', 'error')
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar viatura.', 'error')
           }
         })
       })
