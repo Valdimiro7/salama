@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from decimal import Decimal
 from django.utils import timezone
+from django.shortcuts import render, get_object_or_404
 
 
 
@@ -51,8 +52,70 @@ def create_account_type(request):
             "id": account_type.id,
         }
     )
+#============================================================================================================
+#============================================================================================================
+@require_POST
+def update_account_type(request):
+    at_id = request.POST.get("id", "").strip()
+    category = request.POST.get("category", "").strip()
+    name = request.POST.get("name", "").strip()
+
+    if not at_id:
+        return JsonResponse(
+            {"success": False, "message": "ID do tipo de conta é obrigatório."},
+            status=400,
+        )
+
+    if not category or not name:
+        return JsonResponse(
+            {"success": False, "message": "Categoria e nome são obrigatórios."},
+            status=400,
+        )
+
+    if category not in ["cash", "mobile", "bank"]:
+        return JsonResponse(
+            {"success": False, "message": "Categoria inválida."},
+            status=400,
+        )
+
+    account_type = get_object_or_404(AccountType, pk=at_id)
+
+    account_type.category = category
+    account_type.name = name
+    account_type.save(update_fields=["category", "name"])
+
+    return JsonResponse(
+        {"success": True, "message": "Tipo de conta actualizado com sucesso."}
+    )
 
 
+#============================================================================================================
+#============================= ACTIVAR / DESACTIVAR TIPO DE CONTA ===========================================
+#============================================================================================================
+@require_POST
+def toggle_account_type_status(request):
+    at_id = request.POST.get("id", "").strip()
+
+    if not at_id:
+        return JsonResponse(
+            {"success": False, "message": "ID do tipo de conta é obrigatório."},
+            status=400,
+        )
+
+    account_type = get_object_or_404(AccountType, pk=at_id)
+
+    account_type.is_active = not account_type.is_active
+    account_type.save(update_fields=["is_active"])
+
+    status_label = "activado" if account_type.is_active else "desactivado"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": f"Tipo de conta {status_label} com sucesso.",
+            "is_active": account_type.is_active,
+        }
+    )
 #============================================================================================================
 #============================================================================================================
 def client_account_list(request):
@@ -130,6 +193,95 @@ def create_client_account(request):
         {"success": True, "message": "Conta de cliente criada com sucesso."}
     )
 
+#============================================================================================================
+#============================================================================================================
+@require_POST
+def update_client_account(request):
+    account_id = request.POST.get("id", "").strip()
+    member_id = request.POST.get("member", "").strip()
+    account_type_id = request.POST.get("account_type", "").strip()
+    account_identifier = request.POST.get("account_identifier", "").strip()
+    balance_raw = request.POST.get("balance", "").strip()
+
+    if not account_id:
+        return JsonResponse(
+            {"success": False, "message": "ID da conta é obrigatório."},
+            status=400,
+        )
+
+    if not member_id or not account_type_id or not account_identifier:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Membro, tipo de conta e identificador são obrigatórios.",
+            },
+            status=400,
+        )
+
+    account = get_object_or_404(ClientAccount, pk=account_id)
+
+    try:
+        member = Member.objects.get(pk=member_id, is_active=True)
+    except Member.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "message": "Membro inválido."},
+            status=400,
+        )
+
+    try:
+        account_type = AccountType.objects.get(pk=account_type_id, is_active=True)
+    except AccountType.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "message": "Tipo de conta inválido."},
+            status=400,
+        )
+
+    try:
+        balance = Decimal(str(balance_raw)) if balance_raw else Decimal("0")
+    except Exception:
+        return JsonResponse(
+            {"success": False, "message": "Saldo inválido."},
+            status=400,
+        )
+
+    account.member = member
+    account.account_type = account_type
+    account.account_identifier = account_identifier
+    account.balance = balance
+    account.save(update_fields=["member", "account_type", "account_identifier", "balance"])
+
+    return JsonResponse(
+        {"success": True, "message": "Conta de cliente actualizada com sucesso."}
+    )
+
+
+#============================================================================================================
+#============================= ACTIVAR / DESACTIVAR CONTA DE CLIENTE ========================================
+#============================================================================================================
+@require_POST
+def toggle_client_account_status(request):
+    account_id = request.POST.get("id", "").strip()
+
+    if not account_id:
+        return JsonResponse(
+            {"success": False, "message": "ID da conta é obrigatório."},
+            status=400,
+        )
+
+    account = get_object_or_404(ClientAccount, pk=account_id)
+
+    account.is_active = not account.is_active
+    account.save(update_fields=["is_active"])
+
+    status_label = "activada" if account.is_active else "desactivada"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": f"Conta de cliente {status_label} com sucesso.",
+            "is_active": account.is_active,
+        }
+    )
 
 #============================================================================================================
 #============================================================================================================

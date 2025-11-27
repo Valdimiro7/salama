@@ -17,7 +17,9 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Gestão de Tipos de Contas</h6>
-                  <p class="text-sm text-muted mb-0">Definição de tipos de conta para operações de microcrédito.</p>
+                  <p class="text-sm text-muted mb-0">
+                    Definição de tipos de conta para operações de microcrédito (cash, carteira móvel, conta bancária, etc.).
+                  </p>
                 </div>
                 <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addAccountTypeModal">
                   <i class="material-symbols-rounded me-1">add_circle</i>
@@ -33,11 +35,17 @@
                       <th>Categoria</th>
                       <th>Nome do Tipo de Conta</th>
                       <th>Status</th>
+                      <th style="width: 170px;">Acções</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for a in account_types %}
-                      <tr>
+                      <tr
+                        data-id="{{ a.id }}"
+                        data-category="{{ a.category }}"
+                        data-name="{{ a.name|escapejs }}"
+                        data-active="{% if a.is_active %}1{% else %}0{% endif %}"
+                      >
                         <td>{{ a.id }}</td>
                         <td>{{ a.get_category_display }}</td>
                         <td>{{ a.name }}</td>
@@ -46,6 +54,24 @@
                             <span class="badge bg-success text-white">Activo</span>
                           {% else %}
                             <span class="badge bg-secondary text-white">Inactivo</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <button type="button"
+                                  class="btn btn-sm btn-outline-primary btn-edit-account-type me-1">
+                            <i class="material-symbols-rounded" style="font-size:18px;">edit</i>
+                          </button>
+
+                          {% if a.is_active %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger btn-toggle-account-type">
+                              <i class="material-symbols-rounded" style="font-size:18px;">block</i>
+                            </button>
+                          {% else %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-success btn-toggle-account-type">
+                              <i class="material-symbols-rounded" style="font-size:18px;">check_circle</i>
+                            </button>
                           {% endif %}
                         </td>
                       </tr>
@@ -73,7 +99,7 @@
             <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <!-- Categoria SEM floating label -->
+            <!-- Categoria -->
             <div class="mb-3">
               <label class="form-label d-block">Categoria *</label>
               <select class="form-select" name="category" id="id_category">
@@ -84,7 +110,7 @@
               </select>
             </div>
 
-            <!-- Nome do Tipo de Conta COM floating label -->
+            <!-- Nome do Tipo de Conta -->
             <div class="mb-3">
               <div class="input-group input-group-outline">
                 <label class="form-label">Nome do Tipo de Conta *</label>
@@ -100,6 +126,45 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: EDITAR TIPO DE CONTA -->
+  <div class="modal fade" id="editAccountTypeModal" tabindex="-1" aria-labelledby="editAccountTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editAccountTypeForm">
+          {% csrf_token %}
+          <input type="hidden" name="id" id="edit_account_id" />
+          <div class="modal-header">
+            <h5 class="modal-title" id="editAccountTypeModalLabel">Editar Tipo de Conta</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Categoria -->
+            <div class="mb-3">
+              <label class="form-label d-block">Categoria *</label>
+              <select class="form-select" name="category" id="edit_category">
+                <option value="cash">Cash</option>
+                <option value="mobile">Carteira móvel</option>
+                <option value="bank">Conta bancária</option>
+              </select>
+            </div>
+
+            <!-- Nome -->
+            <div class="mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Nome do Tipo de Conta *</label>
+                <input type="text" class="form-control" name="name" id="edit_account_name" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Actualizar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
@@ -108,8 +173,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // DataTable simples
-      $('#account-types-table').DataTable({
+      const table = $('#account-types-table').DataTable({
         pageLength: 10,
         lengthMenu: [
           [10, 25, 50, -1],
@@ -121,7 +185,7 @@
         }
       });
 
-      // Corrigir floating label do input de nome no modal
+      // Floating label no modal ADD
       const nameInput = document.getElementById('id_account_name');
       if (nameInput) {
         const wrapper = nameInput.closest('.input-group.input-group-outline');
@@ -138,7 +202,24 @@
         });
       }
 
-      // Submeter modal via AJAX
+      // Floating label no modal EDIT
+      const editNameInput = document.getElementById('edit_account_name');
+      if (editNameInput) {
+        const editWrapper = editNameInput.closest('.input-group.input-group-outline');
+        editNameInput.addEventListener('focus', function () {
+          editWrapper.classList.add('is-focused');
+        });
+        editNameInput.addEventListener('blur', function () {
+          editWrapper.classList.remove('is-focused');
+          if (editNameInput.value.trim() !== '') {
+            editWrapper.classList.add('is-filled');
+          } else {
+            editWrapper.classList.remove('is-filled');
+          }
+        });
+      }
+
+      // ===================== CRIAR TIPO DE CONTA =====================
       $('#addAccountTypeForm').on('submit', function (e) {
         e.preventDefault();
 
@@ -173,6 +254,117 @@
           error: function (xhr) {
             Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de conta.', 'error');
           }
+        });
+      });
+
+      // ===================== ABRIR MODAL EDITAR =====================
+      const editModalEl = document.getElementById('editAccountTypeModal');
+      const editModal = new bootstrap.Modal(editModalEl);
+
+      $('#account-types-table').on('click', '.btn-edit-account-type', function () {
+        const row = $(this).closest('tr');
+        const id = row.data('id');
+        const category = row.data('category');
+        const name = row.data('name');
+
+        $('#edit_account_id').val(id);
+        $('#edit_category').val(category);
+        $('#edit_account_name').val(name);
+
+        // Ajustar floating label do edit
+        const editWrapper = editNameInput.closest('.input-group.input-group-outline');
+        if (name && name.trim() !== '') {
+          editWrapper.classList.add('is-filled');
+        } else {
+          editWrapper.classList.remove('is-filled');
+        }
+
+        editModal.show();
+      });
+
+      // ===================== SUBMIT EDITAR =====================
+      $('#editAccountTypeForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const category = $('#edit_category').val();
+        const name = $('#edit_account_name').val().trim();
+
+        if (!category || !name) {
+          Swal.fire('Validação', 'Categoria e nome são obrigatórios.', 'warning');
+          return;
+        }
+
+        $.ajax({
+          url: "{% url 'core:update_account_type' %}",
+          type: 'POST',
+          data: $(this).serialize(),
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          success: function (resp) {
+            if (resp.success) {
+              editModal.hide();
+              Swal.fire({
+                icon: 'success',
+                title: 'Actualizado',
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => {
+                window.location.reload();
+              });
+            } else {
+              Swal.fire('Erro', resp.message || 'Falha ao actualizar tipo de conta.', 'error');
+            }
+          },
+          error: function (xhr) {
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar tipo de conta.', 'error');
+          }
+        });
+      });
+
+      // ===================== ACTIVAR / DESACTIVAR =====================
+      $('#account-types-table').on('click', '.btn-toggle-account-type', function () {
+        const row = $(this).closest('tr');
+        const id = row.data('id');
+        const name = row.data('name');
+        const isActive = row.data('active') === 1 || row.data('active') === '1';
+
+        const actionText = isActive ? 'desactivar' : 'activar';
+        const confirmBtn = isActive ? 'Sim, desactivar' : 'Sim, activar';
+
+        Swal.fire({
+          title: isActive ? 'Desactivar tipo de conta?' : 'Activar tipo de conta?',
+          html: `Tem a certeza que pretende <strong>${actionText}</strong> o tipo de conta <strong>${name}</strong>?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: confirmBtn,
+          cancelButtonText: 'Cancelar'
+        }).then((result) => {
+          if (!result.isConfirmed) return;
+
+          $.ajax({
+            url: "{% url 'core:toggle_account_type_status' %}",
+            type: 'POST',
+            data: { id: id },
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function (resp) {
+              if (resp.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Actualizado',
+                  text: resp.message,
+                  timer: 2000,
+                  showConfirmButton: false
+                }).then(() => {
+                  window.location.reload();
+                });
+              } else {
+                Swal.fire('Erro', resp.message || 'Falha ao actualizar status.', 'error');
+              }
+            },
+            error: function (xhr) {
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar status.', 'error');
+            }
+          });
         });
       });
     });

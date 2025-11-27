@@ -240,16 +240,17 @@ def pending_loans_list(request):
     """
     loans = (
         Loan.objects
-        .select_related("member", "loan_type", "interest_type")
+        .select_related("member", "loan_type", "interest_type", "created_by")
         .filter(status="pending")
         .order_by("-id")
     )
     context = {
         "loans": loans,
         "segment": "loans_pending",
-        }
+    }
     
     return render(request, "loan/pending_loans_list.html", context)
+
 
 #============================================================================================================
 #============================================================================================================

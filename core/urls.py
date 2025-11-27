@@ -1,14 +1,14 @@
 from django.urls import path
 from core.views.dashboard_view import dashboard_view
 from core.views.member.member_view import add_member, member_list, update_member, deactivate_member, member_detail_json
-from core.views.account.account_view import account_type_list, create_account_type
-from core.views.account.account_view import client_account_list, create_client_account
+from core.views.account.account_view import account_type_list, create_account_type, update_account_type, toggle_account_type_status
+from core.views.account.account_view import client_account_list, create_client_account, update_client_account, toggle_client_account_status
 from core.views.account.account_view import company_account_list, create_company_account, update_company_account, deactivate_company_account
 from core.views.expense.expense_view import expense_category_list, create_expense_category
 from core.views.expense.expense_view import expense_list, create_expense, download_expense_attachment, update_expense_category, deactivate_expense_category
 from core.views.income.income_view import income_category_list, create_income_category, income_list, create_income, download_income_attachment, update_income_category, toggle_income_category_status
 from core.views.transaction.transaction_view import transaction_list
-from core.views.interest.interest_view import interest_type_list, create_interest_type, interest_calculator
+from core.views.interest.interest_view import interest_type_list, create_interest_type, interest_calculator, update_interest_type, toggle_interest_type_status
 from core.views.loan.loan_views import new_loan
 from core.views.loan.loan_type_views import loan_type_list, create_loan_type, update_loan_type, toggle_loan_type
 from core.views.loan.loan_views import pending_loans_list, confirm_loan, reject_loan
@@ -37,10 +37,16 @@ urlpatterns = [
     # Tipos de Contas
     path("accounts/types/", account_type_list, name="account_type_list"),
     path("accounts/types/create/", create_account_type, name="create_account_type"),
+    path("accounts/types/update/",update_account_type,name="update_account_type",),
+    path("accounts/types/toggle-status/",toggle_account_type_status,name="toggle_account_type_status",),
+
     
         # Contas do Cliente
     path("accounts/client/", client_account_list, name="client_account_list"),
     path("accounts/client/create/", create_client_account, name="create_client_account"),
+    path("accounts/client/update/",update_client_account,name="update_client_account",),
+    path("accounts/client/toggle-status/",toggle_client_account_status,name="toggle_client_account_status",),
+
 
     # Contas da Empresa
     path("accounts/company/", company_account_list, name="company_account_list"),
@@ -54,7 +60,7 @@ urlpatterns = [
     path("expenses/create/", create_expense, name="create_expense"),
     path("expenses/<int:expense_id>/download/", download_expense_attachment, name="download_expense_attachment"),
     path("expenses/categories/update/",update_expense_category,name="update_expense_category",),
-path("expenses/categories/deactivate/",deactivate_expense_category,name="deactivate_expense_category",),
+    path("expenses/categories/deactivate/",deactivate_expense_category,name="deactivate_expense_category",),
 
      
      
@@ -79,6 +85,9 @@ path("expenses/categories/deactivate/",deactivate_expense_category,name="deactiv
     path("interest/types/", interest_type_list, name="interest_type_list"),
     path("interest/types/create/", create_interest_type, name="create_interest_type"),
     path("interest/calculator/", interest_calculator, name="interest_calculator"),
+    path("interest/types/update/", update_interest_type,name="update_interest_type",),
+    path("interest/types/toggle-status/", toggle_interest_type_status,name="toggle_interest_type_status",),
+
     
     
     path("loans/new/", new_loan, name="new_loan"),

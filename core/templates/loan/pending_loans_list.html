@@ -17,7 +17,9 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Empréstimos à espera de confirmação</h6>
-                  <p class="text-sm text-muted mb-0">Ao confirmar, o empréstimo passa para a fase de desembolso. Pode também rejeitar o pedido.</p>
+                  <p class="text-sm text-muted mb-0">
+                    Ao confirmar, o empréstimo passa para a fase de desembolso. Pode também rejeitar o pedido.
+                  </p>
                 </div>
               </div>
 
@@ -31,6 +33,7 @@
                       <th>Valor (MT)</th>
                       <th>Pagamento / ciclo</th>
                       <th>Nº períodos</th>
+                      <th>Criado por</th>
                       <th>Status</th>
                       <th style="width: 180px;">Actions</th>
                     </tr>
@@ -41,12 +44,24 @@
                         <td>{{ loan.id }}</td>
                         <td>
                           {{ loan.member.first_name }} {{ loan.member.last_name }}
-                          <br /><small class="text-muted">{{ loan.member.phone }}</small>
+                          <br />
+                          <small class="text-muted">{{ loan.member.phone }}</small>
                         </td>
                         <td>{{ loan.loan_type.name|default:'—' }}</td>
                         <td>{{ loan.principal_amount|floatformat:2 }}</td>
                         <td>{{ loan.payment_per_period|default:0|floatformat:2 }}</td>
                         <td>{{ loan.term_periods }}</td>
+                        <td>
+                          {% if loan.created_by %}
+                            {{ loan.created_by.get_full_name|default:loan.created_by.username }}
+                            <br />
+                            <small class="text-muted">
+                              {{ loan.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                          {% else %}
+                            <span class="text-muted">—</span>
+                          {% endif %}
+                        </td>
                         <td>
                           <span class="badge bg-warning text-dark">Pendente</span>
                         </td>
@@ -65,6 +80,7 @@
                   </tbody>
                 </table>
               </div>
+
             </div>
           </div>
         </div>
@@ -106,13 +122,13 @@
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
-      })
-    
+      });
+
       // CONFIRMAR EMPRÉSTIMO
       $(document).on('click', '.btn-confirm-loan', function () {
-        const tr = $(this).closest('tr')
-        const loanId = tr.data('id')
-    
+        const tr = $(this).closest('tr');
+        const loanId = tr.data('id');
+
         Swal.fire({
           title: 'Confirmar Empréstimo?',
           text: 'O empréstimo será aprovado e poderá ser desembolsado.',
@@ -121,8 +137,8 @@
           confirmButtonText: 'Sim, confirmar',
           cancelButtonText: 'Cancelar'
         }).then((result) => {
-          if (!result.isConfirmed) return
-    
+          if (!result.isConfirmed) return;
+
           $.ajax({
             url: "{% url 'core:confirm_loan' 0 %}".replace('/0/', '/' + loanId + '/'),
             type: 'POST',
@@ -135,23 +151,23 @@
                   text: resp.message,
                   timer: 2000,
                   showConfirmButton: false
-                }).then(() => window.location.reload())
+                }).then(() => window.location.reload());
               } else {
-                Swal.fire('Erro', resp.message || 'Falha ao confirmar empréstimo.', 'error')
+                Swal.fire('Erro', resp.message || 'Falha ao confirmar empréstimo.', 'error');
               }
             },
             error: function (xhr) {
-              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao confirmar empréstimo.', 'error')
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao confirmar empréstimo.', 'error');
             }
-          })
-        })
-      })
-    
+          });
+        });
+      });
+
       // REJEITAR EMPRÉSTIMO
       $(document).on('click', '.btn-reject-loan', function () {
-        const tr = $(this).closest('tr')
-        const loanId = tr.data('id')
-    
+        const tr = $(this).closest('tr');
+        const loanId = tr.data('id');
+
         Swal.fire({
           title: 'Rejeitar Empréstimo?',
           text: 'Esta acção irá marcar o empréstimo como rejeitado/cancelado.',
@@ -160,8 +176,8 @@
           confirmButtonText: 'Sim, rejeitar',
           cancelButtonText: 'Cancelar'
         }).then((result) => {
-          if (!result.isConfirmed) return
-    
+          if (!result.isConfirmed) return;
+
           $.ajax({
             url: "{% url 'core:reject_loan' 0 %}".replace('/0/', '/' + loanId + '/'),
             type: 'POST',
@@ -174,17 +190,17 @@
                   text: resp.message,
                   timer: 2000,
                   showConfirmButton: false
-                }).then(() => window.location.reload())
+                }).then(() => window.location.reload());
               } else {
-                Swal.fire('Erro', resp.message || 'Falha ao rejeitar empréstimo.', 'error')
+                Swal.fire('Erro', resp.message || 'Falha ao rejeitar empréstimo.', 'error');
               }
             },
             error: function (xhr) {
-              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao rejeitar empréstimo.', 'error')
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao rejeitar empréstimo.', 'error');
             }
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
   </script>
 {% endblock %}
