@@ -33,11 +33,17 @@
                       <th>Nome</th>
                       <th>Descrição</th>
                       <th>Status</th>
+                      <th style="width: 160px;">Acções</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for c in categories %}
-                      <tr>
+                      <tr
+                        data-id="{{ c.id }}"
+                        data-name="{{ c.name|escapejs }}"
+                        data-description="{{ c.description|default:''|escapejs }}"
+                        data-active="{% if c.is_active %}1{% else %}0{% endif %}"
+                      >
                         <td>{{ c.id }}</td>
                         <td>{{ c.name }}</td>
                         <td>{{ c.description|default:'—' }}</td>
@@ -46,6 +52,24 @@
                             <span class="badge bg-success text-white">Activo</span>
                           {% else %}
                             <span class="badge bg-secondary text-white">Inactivo</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <button type="button"
+                                  class="btn btn-sm btn-outline-primary btn-edit-income-category me-1">
+                            <i class="material-symbols-rounded" style="font-size:18px;">edit</i>
+                          </button>
+
+                          {% if c.is_active %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger btn-toggle-income-category">
+                              <i class="material-symbols-rounded" style="font-size:18px;">block</i>
+                            </button>
+                          {% else %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-success btn-toggle-income-category">
+                              <i class="material-symbols-rounded" style="font-size:18px;">check_circle</i>
+                            </button>
                           {% endif %}
                         </td>
                       </tr>
@@ -95,6 +119,41 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: EDITAR TIPO DE RENDIMENTO -->
+  <div class="modal fade" id="editIncomeCategoryModal" tabindex="-1" aria-labelledby="editIncomeCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editIncomeCategoryForm">
+          {% csrf_token %}
+          <input type="hidden" name="id" id="edit_income_cat_id" />
+          <div class="modal-header">
+            <h5 class="modal-title" id="editIncomeCategoryModalLabel">Editar Tipo de Rendimento</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Nome *</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="name" id="edit_income_cat_name" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Descrição (opcional)</label>
+              <div class="input-group input-group-outline">
+                <textarea class="form-control" name="description" id="edit_income_cat_description" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Actualizar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
@@ -102,7 +161,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      $('#income-categories-table').DataTable({
+      const table = $('#income-categories-table').DataTable({
         pageLength: 10,
         lengthMenu: [
           [10, 25, 50, -1],
@@ -111,16 +170,19 @@
         order: [[1, 'asc']],
         language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json' }
       })
-    
+
+      // -------------------------
+      // CRIAR TIPO DE RENDIMENTO
+      // -------------------------
       $('#addIncomeCategoryForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const name = $('#id_income_cat_name').val().trim()
         if (!name) {
           Swal.fire('Validação', 'O nome do tipo de rendimento é obrigatório.', 'warning')
           return
         }
-    
+
         $.ajax({
           url: "{% url 'core:create_income_category' %}",
           type: 'POST',
@@ -142,6 +204,108 @@
           error: function (xhr) {
             Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar tipo de rendimento.', 'error')
           }
+        })
+      })
+
+      // -------------------------
+      // EDITAR TIPO DE RENDIMENTO
+      // -------------------------
+      const editModalEl = document.getElementById('editIncomeCategoryModal')
+      const editModal = new bootstrap.Modal(editModalEl)
+
+      $('#income-categories-table').on('click', '.btn-edit-income-category', function () {
+        const row = $(this).closest('tr')
+        const id = row.data('id')
+        const name = row.data('name')
+        const description = row.data('description')
+
+        $('#edit_income_cat_id').val(id)
+        $('#edit_income_cat_name').val(name)
+        $('#edit_income_cat_description').val(description)
+
+        editModal.show()
+      })
+
+      $('#editIncomeCategoryForm').on('submit', function (e) {
+        e.preventDefault()
+
+        const name = $('#edit_income_cat_name').val().trim()
+        if (!name) {
+          Swal.fire('Validação', 'O nome do tipo de rendimento é obrigatório.', 'warning')
+          return
+        }
+
+        $.ajax({
+          url: "{% url 'core:update_income_category' %}",
+          type: 'POST',
+          data: $(this).serialize(),
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          success: function (resp) {
+            if (resp.success) {
+              editModal.hide()
+              Swal.fire({
+                icon: 'success',
+                title: 'Actualizado',
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => window.location.reload())
+            } else {
+              Swal.fire('Erro', resp.message || 'Falha ao actualizar tipo de rendimento.', 'error')
+            }
+          },
+          error: function (xhr) {
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar tipo de rendimento.', 'error')
+          }
+        })
+      })
+
+      // -------------------------
+      // ACTIVAR / DESACTIVAR TIPO DE RENDIMENTO
+      // -------------------------
+      $('#income-categories-table').on('click', '.btn-toggle-income-category', function () {
+        const row = $(this).closest('tr')
+        const id = row.data('id')
+        const name = row.data('name')
+        const isActive = row.data('active') === 1 || row.data('active') === '1'
+
+        const actionText = isActive ? 'desactivar' : 'activar'
+        const confirmBtn = isActive ? 'Sim, desactivar' : 'Sim, activar'
+
+        Swal.fire({
+          title: isActive ? 'Desactivar tipo de rendimento?' : 'Activar tipo de rendimento?',
+          html: `Tem a certeza que pretende <strong>${actionText}</strong> o tipo <strong>${name}</strong>?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: confirmBtn,
+          cancelButtonText: 'Cancelar'
+        }).then((result) => {
+          if (!result.isConfirmed) return
+
+          $.ajax({
+            url: "{% url 'core:toggle_income_category_status' %}",
+            type: 'POST',
+            data: { id: id },
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function (resp) {
+              if (resp.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Actualizado',
+                  text: resp.message,
+                  timer: 2000,
+                  showConfirmButton: false
+                }).then(() => {
+                  window.location.reload()
+                })
+              } else {
+                Swal.fire('Erro', resp.message || 'Falha ao actualizar status.', 'error')
+              }
+            },
+            error: function (xhr) {
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar status.', 'error')
+            }
+          })
         })
       })
     })

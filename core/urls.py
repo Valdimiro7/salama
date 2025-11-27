@@ -5,8 +5,8 @@ from core.views.account.account_view import account_type_list, create_account_ty
 from core.views.account.account_view import client_account_list, create_client_account
 from core.views.account.account_view import company_account_list, create_company_account, update_company_account, deactivate_company_account
 from core.views.expense.expense_view import expense_category_list, create_expense_category
-from core.views.expense.expense_view import expense_list, create_expense, download_expense_attachment
-from core.views.income.income_view import income_category_list, create_income_category, income_list, create_income, download_income_attachment
+from core.views.expense.expense_view import expense_list, create_expense, download_expense_attachment, update_expense_category, deactivate_expense_category
+from core.views.income.income_view import income_category_list, create_income_category, income_list, create_income, download_income_attachment, update_income_category, toggle_income_category_status
 from core.views.transaction.transaction_view import transaction_list
 from core.views.interest.interest_view import interest_type_list, create_interest_type, interest_calculator
 from core.views.loan.loan_views import new_loan
@@ -52,12 +52,18 @@ urlpatterns = [
     path("expenses/categories/create/", create_expense_category, name="create_expense_category"),
     path("expenses/", expense_list, name="expense_list"),
     path("expenses/create/", create_expense, name="create_expense"),
-     path("expenses/<int:expense_id>/download/", download_expense_attachment, name="download_expense_attachment"),
+    path("expenses/<int:expense_id>/download/", download_expense_attachment, name="download_expense_attachment"),
+    path("expenses/categories/update/",update_expense_category,name="update_expense_category",),
+path("expenses/categories/deactivate/",deactivate_expense_category,name="deactivate_expense_category",),
+
      
      
      # Rendimentos - Tipos
     path("incomes/categories/", income_category_list, name="income_category_list"),
     path("incomes/categories/create/", create_income_category, name="create_income_category"),
+    path("incomes/categories/update/", update_income_category,name="update_income_category",),
+    path("incomes/categories/toggle-status/",toggle_income_category_status,name="toggle_income_category_status",),
+
 
     # Rendimentos - Lançamentos
     path("incomes/", income_list, name="income_list"),

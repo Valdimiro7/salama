@@ -1,6 +1,9 @@
 from django.db import models
+from django.conf import settings
+
 from .incomecategory import IncomeCategory
 from .companyaccount import CompanyAccount
+
 
 class Income(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -17,13 +20,22 @@ class Income(models.Model):
     income_date = models.DateField()
     description = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=15, decimal_places=2)
-    attachment = models.FileField(                
+    attachment = models.FileField(
         max_length=255,
         upload_to="incomes/%Y/%m/",
         blank=True,
         null=True,
     )
     is_active = models.BooleanField(default=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="incomes_created",
+        blank=True,
+        null=True,
+    )
+
     created_at = models.DateTimeField()
 
     class Meta:

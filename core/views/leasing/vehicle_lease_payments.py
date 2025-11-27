@@ -24,7 +24,6 @@ def vehicle_lease_payment_list(request):
     modal para registar novo pagamento.
     """
 
-    # Todos pagamentos, sem filtro de status
     payments = (
         VehicleLeasePayment.objects
         .select_related(
@@ -32,6 +31,7 @@ def vehicle_lease_payment_list(request):
             "contract__leased_vehicle",
             "contract__driver",
             "company_account",
+            "created_by",
         )
         .order_by("-payment_date", "-id")
     )
@@ -45,7 +45,6 @@ def vehicle_lease_payment_list(request):
     pagamentos_mes = payments.filter(payment_date__gte=primeiro_dia_mes)
     kpi_total_mes = pagamentos_mes.aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
-    # Contratos activos (para o modal de registo de pagamento)
     active_contracts = (
         VehicleLeaseContract.objects
         .select_related("leased_vehicle", "driver")
@@ -85,7 +84,7 @@ def create_vehicle_lease_payment(request):
     company_account_id = request.POST.get("company_account", "").strip()
     payment_date_str = request.POST.get("payment_date", "").strip()
     amount_raw = request.POST.get("amount", "").strip()
-    method = request.POST.get("method", "").strip() or "bank"
+    method = request.POST.get("method", "").strip() or "bank_transfer"
     notes = request.POST.get("notes", "").strip()
 
     if not contract_id or not company_account_id or not payment_date_str or not amount_raw:
@@ -124,11 +123,11 @@ def create_vehicle_lease_payment(request):
             status=400,
         )
 
-    # Saldo antes (antes de somar o pagamento)
+    # saldo antes
     balance_before = company_account.balance
     balance_after = balance_before + amount
 
-    # Criar pagamento
+    # pagamento
     payment = VehicleLeasePayment.objects.create(
         contract=contract,
         driver=contract.driver,
@@ -137,17 +136,18 @@ def create_vehicle_lease_payment(request):
         amount=amount,
         method=method,
         notes=notes or None,
+        created_by=request.user,  # <<< AQUI
     )
 
-    # Actualizar saldo da conta da empresa
+    # actualizar saldo
     company_account.balance = balance_after
     company_account.save(update_fields=["balance"])
 
-    # Registar transacção (entrada)
+    # registar transacção
     Transaction.objects.create(
-    company_account=company_account,
+        company_account=company_account,
         tx_type=Transaction.TX_TYPE_IN,
-        source_type="vehicle_lease_payment",  # OK
+        source_type="vehicle_lease_payment",
         source_id=payment.id,
         tx_date=payment_date,
         description=(
@@ -159,9 +159,8 @@ def create_vehicle_lease_payment(request):
         balance_after=balance_after,
         is_active=True,
         created_at=timezone.now(),
-        created_by=request.user,
+        created_by=request.user,  # se já tens o campo criado em Transaction
     )
-
 
     return JsonResponse(
         {"success": True, "message": "Pagamento de leasing registado com sucesso."}

@@ -1,6 +1,7 @@
-# core/models/vehicleleasepayment.py  (podes ajustar o caminho conforme a tua estrutura)
+# core/models/vehicleleasepayment.py
 
 from django.db import models
+from django.conf import settings
 from .vehicleleasecontract import VehicleLeaseContract
 from .member import Member
 from .companyaccount import CompanyAccount
@@ -51,11 +52,19 @@ class VehicleLeasePayment(models.Model):
     )
 
     notes = models.TextField("Notas", blank=True, null=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="vehicle_lease_payments_created",
+        blank=True,
+        null=True,
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = False
-        # Mantemos a mesma tabela antiga para não partir a BD
         db_table = "sl_vehicle_lease_payments"
 
     def __str__(self):

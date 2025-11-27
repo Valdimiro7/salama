@@ -17,7 +17,7 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Gestão de Categorias</h6>
-                  <p class="text-sm text-muted mb-0">Crie e organize categorias para as despesas do sistema.</p>
+                  <p class="text-sm text-muted mb-0">Crie, edite e desactive categorias para as despesas do sistema.</p>
                 </div>
                 <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addExpenseCategoryModal">
                   <i class="material-symbols-rounded me-1">category</i>
@@ -33,11 +33,16 @@
                       <th>Nome</th>
                       <th>Descrição</th>
                       <th>Status</th>
+                      <th style="width: 150px;">Acções</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for c in categories %}
-                      <tr>
+                      <tr
+                        data-id="{{ c.id }}"
+                        data-name="{{ c.name|escapejs }}"
+                        data-description="{{ c.description|default:''|escapejs }}"
+                      >
                         <td>{{ c.id }}</td>
                         <td>{{ c.name }}</td>
                         <td>{{ c.description|default:'—' }}</td>
@@ -47,6 +52,16 @@
                           {% else %}
                             <span class="badge bg-secondary text-white">Inactivo</span>
                           {% endif %}
+                        </td>
+                        <td>
+                          <button type="button"
+                                  class="btn btn-sm btn-outline-primary btn-edit-category me-1">
+                            <i class="material-symbols-rounded" style="font-size:18px;">edit</i>
+                          </button>
+                          <button type="button"
+                                  class="btn btn-sm btn-outline-danger btn-deactivate-category">
+                            <i class="material-symbols-rounded" style="font-size:18px;">block</i>
+                          </button>
                         </td>
                       </tr>
                     {% endfor %}
@@ -95,17 +110,51 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: EDITAR CATEGORIA -->
+  <div class="modal fade" id="editExpenseCategoryModal" tabindex="-1" aria-labelledby="editExpenseCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editExpenseCategoryForm">
+          {% csrf_token %}
+          <input type="hidden" name="id" id="edit_cat_id" />
+          <div class="modal-header">
+            <h5 class="modal-title" id="editExpenseCategoryModalLabel">Editar Categoria de Despesa</h5>
+            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Nome *</label>
+                <input type="text" class="form-control" name="name" id="edit_cat_name" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="input-group input-group-outline">
+                <label class="form-label">Descrição (opcional)</label>
+                <textarea class="form-control" name="description" id="edit_cat_description" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn bg-gradient-dark">Actualizar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
-  <!-- DataTables -->
-
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      $('#expense-categories-table').DataTable({
+      // DataTables
+      const table = $('#expense-categories-table').DataTable({
         pageLength: 10,
         lengthMenu: [
           [10, 25, 50, -1],
@@ -116,16 +165,19 @@
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
       })
-    
+
+      // -------------------------
+      // CRIAR CATEGORIA
+      // -------------------------
       $('#addExpenseCategoryForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const name = $('#id_cat_name').val().trim()
         if (!name) {
           Swal.fire('Validação', 'O nome da categoria é obrigatório.', 'warning')
           return
         }
-    
+
         $.ajax({
           url: "{% url 'core:create_expense_category' %}",
           type: 'POST',
@@ -149,6 +201,108 @@
           error: function (xhr) {
             Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao criar categoria.', 'error')
           }
+        })
+      })
+
+      // -------------------------
+      // EDITAR CATEGORIA
+      // -------------------------
+      const editModalEl = document.getElementById('editExpenseCategoryModal')
+      const editModal = new bootstrap.Modal(editModalEl)
+
+      $('#expense-categories-table').on('click', '.btn-edit-category', function () {
+        const row = $(this).closest('tr')
+        const id = row.data('id')
+        const name = row.data('name')
+        const description = row.data('description')
+
+        $('#edit_cat_id').val(id)
+        $('#edit_cat_name').val(name)
+        $('#edit_cat_description').val(description)
+
+        editModal.show()
+      })
+
+      $('#editExpenseCategoryForm').on('submit', function (e) {
+        e.preventDefault()
+
+        const id = $('#edit_cat_id').val()
+        const name = $('#edit_cat_name').val().trim()
+
+        if (!name) {
+          Swal.fire('Validação', 'O nome da categoria é obrigatório.', 'warning')
+          return
+        }
+
+        $.ajax({
+          url: "{% url 'core:update_expense_category' %}",
+          type: 'POST',
+          data: $(this).serialize(),
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          success: function (resp) {
+            if (resp.success) {
+              editModal.hide()
+              Swal.fire({
+                icon: 'success',
+                title: 'Actualizada',
+                text: resp.message,
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => {
+                window.location.reload()
+              })
+            } else {
+              Swal.fire('Erro', resp.message || 'Falha ao actualizar categoria.', 'error')
+            }
+          },
+          error: function (xhr) {
+            Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao actualizar categoria.', 'error')
+          }
+        })
+      })
+
+      // -------------------------
+      // DESACTIVAR CATEGORIA
+      // -------------------------
+      $('#expense-categories-table').on('click', '.btn-deactivate-category', function () {
+        const row = $(this).closest('tr')
+        const id = row.data('id')
+        const name = row.data('name')
+
+        Swal.fire({
+          title: 'Desactivar categoria?',
+          html: `Tem a certeza que pretende desactivar a categoria <strong>${name}</strong>?<br><small>Ela deixará de aparecer para novas despesas.</small>`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sim, desactivar',
+          cancelButtonText: 'Cancelar'
+        }).then((result) => {
+          if (!result.isConfirmed) return
+
+          $.ajax({
+            url: "{% url 'core:deactivate_expense_category' %}",
+            type: 'POST',
+            data: { id: id },
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function (resp) {
+              if (resp.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Desactivada',
+                  text: resp.message,
+                  timer: 2000,
+                  showConfirmButton: false
+                }).then(() => {
+                  window.location.reload()
+                })
+              } else {
+                Swal.fire('Erro', resp.message || 'Falha ao desactivar categoria.', 'error')
+              }
+            },
+            error: function (xhr) {
+              Swal.fire('Erro', xhr.responseJSON?.message || 'Falha ao desactivar categoria.', 'error')
+            }
+          })
         })
       })
     })

@@ -17,7 +17,9 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Rendimentos registados</h6>
-                  <p class="text-sm text-muted mb-0">Entrada de valores nas contas da empresa (juros, reembolsos, depósitos, etc.).</p>
+                  <p class="text-sm text-muted mb-0">
+                    Entrada de valores nas contas da empresa (juros, reembolsos, depósitos, etc.).
+                  </p>
                 </div>
                 <button type="button" class="btn bg-gradient-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
                   <i class="material-symbols-rounded me-1">add_card</i>
@@ -36,6 +38,7 @@
                       <th>Descrição</th>
                       <th>Valor (MT)</th>
                       <th>Anexo</th>
+                      <th>Criado por</th>  {# NOVO #}
                     </tr>
                   </thead>
                   <tbody>
@@ -52,9 +55,19 @@
                         <td>{{ i.amount|floatformat:2 }}</td>
                         <td>
                           {% if i.attachment %}
-                            <a href="{% url 'core:download_income_attachment' i.id %}" class="btn btn-sm btn-outline-primary"><i class="material-symbols-rounded" style="font-size:18px;">attach_file</i></a>
+                            <a href="{% url 'core:download_income_attachment' i.id %}"
+                               class="btn btn-sm btn-outline-primary">
+                              <i class="material-symbols-rounded" style="font-size:18px;">attach_file</i>
+                            </a>
                           {% else %}
                             <span class="text-muted">—</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if i.created_by %}
+                            {{ i.created_by.get_full_name|default:i.created_by.username }}
+                          {% else %}
+                            —
                           {% endif %}
                         </td>
                       </tr>
@@ -131,7 +144,8 @@
             <div class="mb-3">
               <label class="form-label">Anexo (opcional)</label>
               <div class="input-group input-group-outline">
-                <input type="file" class="form-control" name="attachment" id="id_income_attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                <input type="file" class="form-control" name="attachment" id="id_income_attachment"
+                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
               </div>
               <small class="text-muted">Ex: comprovativo de pagamento, extracto bancário, etc.</small>
             </div>
@@ -157,7 +171,7 @@
       const mm = String(today.getMonth() + 1).padStart(2, '0')
       const dd = String(today.getDate()).padStart(2, '0')
       document.getElementById('id_income_date').value = `${yyyy}-${mm}-${dd}`
-    
+
       $('#incomes-table').DataTable({
         pageLength: 10,
         lengthMenu: [
@@ -165,26 +179,28 @@
           [10, 25, 50, 'Todos']
         ],
         order: [[1, 'desc']],
-        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json' }
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
+        }
       })
-    
+
       $('#addIncomeForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const date = $('#id_income_date').val()
         const category = $('#id_income_category').val()
         const companyAccount = $('#id_income_company_account').val()
         const description = $('#id_income_description').val().trim()
         const amount = $('#id_income_amount').val().trim()
-    
+
         if (!date || !category || !companyAccount || !description || !amount) {
           Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
           return
         }
-    
+
         const formEl = document.getElementById('addIncomeForm')
         const formData = new FormData(formEl)
-    
+
         $.ajax({
           url: "{% url 'core:create_income' %}",
           type: 'POST',

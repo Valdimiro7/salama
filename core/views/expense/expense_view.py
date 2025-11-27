@@ -13,12 +13,13 @@ from core.models import (
 from django.views.decorators.http import require_POST
 import os
 from django.http import JsonResponse, FileResponse, Http404
+from django.shortcuts import render, get_object_or_404
 
 #============================================================================================================
 #============================================================================================================
 
 def expense_category_list(request):
-    categories = ExpenseCategory.objects.filter(is_active=True).order_by("name")
+    categories = ExpenseCategory.objects.order_by("name")
     return render(
         request,
         "expenses/expense_category_list.html",
@@ -51,13 +52,68 @@ def create_expense_category(request):
 
 #============================================================================================================
 #============================================================================================================
+
+@require_POST
+def update_expense_category(request):
+    cat_id = request.POST.get("id", "").strip()
+    name = request.POST.get("name", "").strip()
+    description = request.POST.get("description", "").strip()
+
+    if not cat_id:
+        return JsonResponse(
+            {"success": False, "message": "ID da categoria é obrigatório."},
+            status=400,
+        )
+
+    if not name:
+        return JsonResponse(
+            {"success": False, "message": "Nome da categoria é obrigatório."},
+            status=400,
+        )
+
+    category = get_object_or_404(ExpenseCategory, pk=cat_id)
+
+    category.name = name
+    category.description = description or None
+    category.save(update_fields=["name", "description"])
+
+    return JsonResponse(
+        {"success": True, "message": "Categoria de despesa actualizada com sucesso."}
+    )
+
+
+#============================================================================================================
+#============================================================================================================
+
+@require_POST
+def deactivate_expense_category(request):
+    cat_id = request.POST.get("id", "").strip()
+
+    if not cat_id:
+        return JsonResponse(
+            {"success": False, "message": "ID da categoria é obrigatório."},
+            status=400,
+        )
+
+    category = get_object_or_404(ExpenseCategory, pk=cat_id, is_active=True)
+
+    category.is_active = False
+    category.save(update_fields=["is_active"])
+
+    return JsonResponse(
+        {"success": True, "message": "Categoria de despesa desactivada com sucesso."}
+    )
+#============================================================================================================
+#============================================================================================================
+
+
 def expense_list(request):
     categories = ExpenseCategory.objects.filter(is_active=True).order_by("name")
     company_accounts = CompanyAccount.objects.filter(is_active=True).order_by("name")
 
     expenses = (
         Expense.objects.filter(is_active=True)
-        .select_related("category", "company_account")
+        .select_related("category", "company_account", "created_by")
         .order_by("-expense_date", "-id")
     )
 
@@ -73,6 +129,9 @@ def expense_list(request):
     )
 
 
+
+#============================================================================================================
+#============================================================================================================
 #============================================================================================================
 #============================================================================================================
 @require_POST
@@ -139,6 +198,7 @@ def create_expense(request):
         amount=amount,
         is_active=True,
         created_at=timezone.now(),
+        created_by=request.user,   # <<< NOVO
     )
     if attachment_file:
         expense.attachment = attachment_file

@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from decimal import Decimal
+from django.shortcuts import render, get_object_or_404
 from django.shortcuts import render, redirect
 from core.models import (
     Member,
@@ -22,12 +23,15 @@ from django.http import JsonResponse, FileResponse, Http404
 #============================================================================================================
 #============================================================================================================
 def income_category_list(request):
-    categories = IncomeCategory.objects.filter(is_active=True).order_by("name")
+    # Agora mostramos todos para poderes activar/desactivar
+    categories = IncomeCategory.objects.all().order_by("name")
     return render(
         request,
         "incomes/income_category_list.html",
-        {"categories": categories,
-         "segment": "income_categories",},
+        {
+            "categories": categories,
+            "segment": "income_categories",
+        },
     )
 
 #============================================================================================================
@@ -52,6 +56,63 @@ def create_income_category(request):
     return JsonResponse(
         {"success": True, "message": "Tipo de rendimento criado com sucesso."}
     )
+    
+    
+@require_POST
+def update_income_category(request):
+    cat_id = request.POST.get("id", "").strip()
+    name = request.POST.get("name", "").strip()
+    description = request.POST.get("description", "").strip()
+
+    if not cat_id:
+        return JsonResponse(
+            {"success": False, "message": "ID do tipo de rendimento é obrigatório."},
+            status=400,
+        )
+
+    if not name:
+        return JsonResponse(
+            {"success": False, "message": "Nome do tipo de rendimento é obrigatório."},
+            status=400,
+        )
+
+    category = get_object_or_404(IncomeCategory, pk=cat_id)
+
+    category.name = name
+    category.description = description or None
+    category.save(update_fields=["name", "description"])
+
+    return JsonResponse(
+        {"success": True, "message": "Tipo de rendimento actualizado com sucesso."}
+    )
+
+
+#============================================================================================================
+#============================================================================================================
+@require_POST
+def toggle_income_category_status(request):
+    cat_id = request.POST.get("id", "").strip()
+
+    if not cat_id:
+        return JsonResponse(
+            {"success": False, "message": "ID do tipo de rendimento é obrigatório."},
+            status=400,
+        )
+
+    category = get_object_or_404(IncomeCategory, pk=cat_id)
+
+    category.is_active = not category.is_active
+    category.save(update_fields=["is_active"])
+
+    status_label = "activado" if category.is_active else "desactivado"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": f"Tipo de rendimento {status_label} com sucesso.",
+            "is_active": category.is_active,
+        }
+    )
 #============================================================================================================
 #============================================================================================================
 def income_list(request):
@@ -60,7 +121,7 @@ def income_list(request):
 
     incomes = (
         Income.objects.filter(is_active=True)
-        .select_related("category", "company_account")
+        .select_related("category", "company_account", "created_by")
         .order_by("-income_date", "-id")
     )
 
@@ -142,6 +203,7 @@ def create_income(request):
         amount=amount,
         is_active=True,
         created_at=timezone.now(),
+        created_by=request.user,   # <<< NOVO
     )
     if attachment_file:
         income.attachment = attachment_file
@@ -169,6 +231,7 @@ def create_income(request):
     return JsonResponse(
         {"success": True, "message": "Rendimento registado, saldo creditado e transacção criada com sucesso."}
     )
+
 
 
 

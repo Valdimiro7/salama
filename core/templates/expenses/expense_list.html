@@ -36,6 +36,7 @@
                       <th>Descrição</th>
                       <th>Valor (MT)</th>
                       <th>Anexo</th>
+                      <th>Criado por</th>   {# NOVO #}
                     </tr>
                   </thead>
                   <tbody>
@@ -52,9 +53,18 @@
                         <td>{{ e.amount|floatformat:2 }}</td>
                         <td>
                           {% if e.attachment %}
-                            <a href="{% url 'core:download_expense_attachment' e.id %}" class="btn btn-sm btn-outline-primary"><i class="material-symbols-rounded" style="font-size:18px;">attach_file</i></a>
+                            <a href="{% url 'core:download_expense_attachment' e.id %}" class="btn btn-sm btn-outline-primary">
+                              <i class="material-symbols-rounded" style="font-size:18px;">attach_file</i>
+                            </a>
                           {% else %}
                             <span class="text-muted">—</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if e.created_by %}
+                            {{ e.created_by.get_full_name|default:e.created_by.username }}
+                          {% else %}
+                            —
                           {% endif %}
                         </td>
                       </tr>
@@ -147,8 +157,6 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- DataTables -->
-
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -160,7 +168,7 @@
       const mm = String(today.getMonth() + 1).padStart(2, '0')
       const dd = String(today.getDate()).padStart(2, '0')
       document.getElementById('id_expense_date').value = `${yyyy}-${mm}-${dd}`
-    
+
       $('#expenses-table').DataTable({
         pageLength: 10,
         lengthMenu: [
@@ -172,31 +180,31 @@
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         }
       })
-    
+
       // Submeter formulário com ficheiro -> usar FormData
       $('#addExpenseForm').on('submit', function (e) {
         e.preventDefault()
-    
+
         const date = $('#id_expense_date').val()
         const category = $('#id_expense_category').val()
         const companyAccount = $('#id_expense_company_account').val()
         const description = $('#id_expense_description').val().trim()
         const amount = $('#id_expense_amount').val().trim()
-    
+
         if (!date || !category || !companyAccount || !description || !amount) {
           Swal.fire('Validação', 'Preencha todos os campos obrigatórios.', 'warning')
           return
         }
-    
+
         const formEl = document.getElementById('addExpenseForm')
         const formData = new FormData(formEl)
-    
+
         $.ajax({
           url: "{% url 'core:create_expense' %}",
           type: 'POST',
           data: formData,
-          processData: false, // NÃO processar (por causa do ficheiro)
-          contentType: false, // deixar o browser definir o boundary
+          processData: false,
+          contentType: false,
           headers: { 'X-CSRFToken': '{{ csrf_token }}' },
           success: function (resp) {
             if (resp.success) {

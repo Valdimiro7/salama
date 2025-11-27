@@ -71,6 +71,7 @@
                       <th>Valor (MT)</th>
                       <th>Método</th>
                       <th>Conta da empresa</th>
+                      <th>Criado por</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -109,6 +110,13 @@
                           <small class="text-muted">
                             {{ p.company_account.account_identifier }}
                           </small>
+                        </td>
+                        <td>
+                          {% if p.created_by %}
+                            {{ p.created_by.get_full_name|default:p.created_by.username }}
+                          {% else %}
+                            —
+                          {% endif %}
                         </td>
                       </tr>
                     {% endfor %}
@@ -218,6 +226,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // DataTable
       $('#vehicle-lease-payment-table').DataTable({
         pageLength: 25,
         lengthMenu: [
