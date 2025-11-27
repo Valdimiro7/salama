@@ -71,9 +71,11 @@
                     <tr>
                       <th>ID</th>
                       <th>Matrícula</th>
+                      <th>Marca</th>
                       <th>Modelo</th>
                       <th>Ano</th>
                       <th>Nº Chassis</th>
+                      <th>Custo aquisição (MT)</th>
                       <th>Renda semanal padrão (MT)</th>
                       <th>Status</th>
                     </tr>
@@ -83,9 +85,17 @@
                       <tr>
                         <td>{{ v.id }}</td>
                         <td>{{ v.plate_number }}</td>
+                        <td>{{ v.brand|default:'—' }}</td>
                         <td>{{ v.model|default:'—' }}</td>
                         <td>{{ v.year|default:'—' }}</td>
                         <td>{{ v.chassis_number|default:'—' }}</td>
+                        <td>
+                          {% if v.acquisition_cost %}
+                            {{ v.acquisition_cost|floatformat:2 }}
+                          {% else %}
+                            —
+                          {% endif %}
+                        </td>
                         <td>{{ v.weekly_rent_default|floatformat:2 }}</td>
                         <td>
                           {% if v.status == 'available' %}
@@ -131,6 +141,13 @@
             </div>
 
             <div class="mb-3">
+              <label class="form-label">Marca</label>
+              <div class="input-group input-group-outline">
+                <input type="text" class="form-control" name="brand" id="id_brand" />
+              </div>
+            </div>
+
+            <div class="mb-3">
               <label class="form-label">Modelo</label>
               <div class="input-group input-group-outline">
                 <input type="text" class="form-control" name="model" id="id_model" />
@@ -148,6 +165,13 @@
               <label class="form-label">Nº Chassis</label>
               <div class="input-group input-group-outline">
                 <input type="text" class="form-control" name="chassis_number" id="id_chassis_number" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Custo de aquisição (MT)</label>
+              <div class="input-group input-group-outline">
+                <input type="number" step="0.01" class="form-control" name="acquisition_cost" id="id_acquisition_cost" />
               </div>
             </div>
 

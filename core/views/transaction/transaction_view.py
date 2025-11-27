@@ -19,15 +19,17 @@ from django.http import JsonResponse, FileResponse, Http404
 def transaction_list(request):
     transactions = (
         Transaction.objects.filter(is_active=True)
-        .select_related("company_account")
+        .select_related("company_account", "created_by")
         .order_by("-tx_date", "-id")
     )
 
     return render(
         request,
         "transactions/transaction_list.html",
-        {"transactions": transactions,
-         "segment": "transactions",},
+        {
+            "transactions": transactions,
+            "segment": "transactions",
+        },
     )
 
 

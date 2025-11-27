@@ -145,9 +145,9 @@ def create_vehicle_lease_payment(request):
 
     # Registar transacção (entrada)
     Transaction.objects.create(
-        company_account=company_account,
-        tx_type=Transaction.TX_TYPE_IN,          # "IN"
-        source_type="vehicle_lease_payment",
+    company_account=company_account,
+        tx_type=Transaction.TX_TYPE_IN,
+        source_type="vehicle_lease_payment",  # OK
         source_id=payment.id,
         tx_date=payment_date,
         description=(
@@ -159,7 +159,9 @@ def create_vehicle_lease_payment(request):
         balance_after=balance_after,
         is_active=True,
         created_at=timezone.now(),
+        created_by=request.user,
     )
+
 
     return JsonResponse(
         {"success": True, "message": "Pagamento de leasing registado com sucesso."}

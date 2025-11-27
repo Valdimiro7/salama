@@ -1,4 +1,4 @@
-# core/models.py
+# core/models/leasedvehicle.py
 
 from django.db import models
 
@@ -12,10 +12,21 @@ class LeasedVehicle(models.Model):
     )
 
     id = models.BigAutoField(primary_key=True)
+
     plate_number = models.CharField("Matrícula", max_length=20, unique=True)
+
+    # NOVO: Marca
+    brand = models.CharField("Marca", max_length=100, blank=True, null=True)
+
     model = models.CharField("Modelo", max_length=100, blank=True, null=True)
     year = models.PositiveIntegerField("Ano", blank=True, null=True)
     chassis_number = models.CharField("Nº de chassis", max_length=100, blank=True, null=True)
+
+    # NOVO: Custo de aquisição
+    acquisition_cost = models.DecimalField(
+        "Custo de aquisição (MT)", max_digits=15, decimal_places=2,
+        blank=True, null=True
+    )
 
     weekly_rent_default = models.DecimalField(
         "Renda semanal padrão (MT)", max_digits=15, decimal_places=2, default=0

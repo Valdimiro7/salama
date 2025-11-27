@@ -17,12 +17,36 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h6 class="mb-0">Movimentos nas Contas da Empresa</h6>
-                  <p class="text-sm text-muted mb-0">Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos, Despesas, Desembolsos de Empréstimos, Reembolsos de Empréstimos, Pagamentos de Leasing de Veículos e ajustes manuais.</p>
+                  <p class="text-sm text-muted mb-0">
+                    Entradas e saídas de dinheiro registadas automaticamente a partir de Rendimentos,
+                    Despesas, Desembolsos de Empréstimos, Reembolsos de Empréstimos,
+                    Pagamentos de Leasing de Veículos e ajustes manuais.
+                  </p>
                 </div>
-                <!-- futuro: botão Nova Transacção manual -->
               </div>
 
-              <div class="table-responsive">
+              {# PILLS PARA FILTRAR TIPO: ENTRADA / SAÍDA #}
+              <div class="mb-3">
+                <ul class="nav nav-pills" id="tx-type-filters">
+                  <li class="nav-item">
+                    <button type="button" class="nav-link active" data-type-filter="all">
+                      Todos
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button type="button" class="nav-link" data-type-filter="IN">
+                      Entradas
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button type="button" class="nav-link" data-type-filter="OUT">
+                      Saídas
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
                 <table id="transactions-table" class="table table-bordered table-striped align-items-center mb-0" style="width:100%">
                   <thead>
                     <tr>
@@ -35,6 +59,7 @@
                       <th>Valor (MT)</th>
                       <th>Saldo Antes</th>
                       <th>Saldo Depois</th>
+                      <th>Criado por</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -44,7 +69,8 @@
                         <td>{{ t.tx_date }}</td>
                         <td>
                           {{ t.company_account.name }}
-                          <br /><small class="text-muted">{{ t.company_account.account_identifier }}</small>
+                          <br />
+                          <small class="text-muted">{{ t.company_account.account_identifier }}</small>
                         </td>
                         <td>
                           {% if t.tx_type == 'IN' %}
@@ -64,7 +90,7 @@
                             Desembolso de Empréstimo
                           {% elif t.source_type == 'loan_repayment' %}
                             Reembolso de Empréstimo
-                          {% elif t.source_type == 'vehicle_lease_payment' %}
+                          {% elif t.source_type == 'vehicle_lease_payment' or t.source_type == 'tuktuk_lease_payment' %}
                             Pagamento Leasing de Veículo
                           {% elif t.source_type == 'opening_balance' %}
                             Saldo Inicial
@@ -74,15 +100,25 @@
                             —
                           {% endif %}
                         </td>
-                        <td>{{ t.description }}</td>
+                        <td title="{{ t.description }}">
+                          {{ t.description|truncatechars:60 }}
+                        </td>
                         <td>{{ t.amount|floatformat:2 }}</td>
                         <td>{{ t.balance_before|floatformat:2 }}</td>
                         <td>{{ t.balance_after|floatformat:2 }}</td>
+                        <td>
+                          {% if t.created_by %}
+                            {{ t.created_by.get_full_name|default:t.created_by.username }}
+                          {% else %}
+                            —
+                          {% endif %}
+                        </td>
                       </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
+
             </div>
           </div>
         </div>
@@ -105,28 +141,50 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      $('#transactions-table').DataTable({
-        pageLength: 25,
+      const table = $('#transactions-table').DataTable({
+        pageLength: 10,
+        lengthChange: true,
         lengthMenu: [
-          [10, 25, 50, -1],
-          [10, 25, 50, 'Todos']
+          [10, 25, 50, 100],
+          [10, 25, 50, 100]
         ],
         order: [
           [1, 'desc'],
           [0, 'desc']
         ],
+        scrollY: '60vh',
+        scrollCollapse: true,
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-PT.json'
         },
         dom: 'lBfrtip',
         buttons: [
-          { extend: 'copy', text: 'Copiar', className: 'btn btn-sm btn-outline-secondary' },
-          { extend: 'csv', text: 'CSV', className: 'btn btn-sm btn-outline-primary' },
-          { extend: 'excel', text: 'Excel', className: 'btn btn-sm btn-outline-success' },
-          { extend: 'pdf', text: 'PDF', className: 'btn btn-sm btn-outline-danger' },
-          { extend: 'print', text: 'Imprimir', className: 'btn btn-sm btn-outline-dark' }
+          { extend: 'copy',  text: 'Copiar',    className: 'btn btn-sm btn-outline-secondary' },
+          { extend: 'csv',   text: 'CSV',       className: 'btn btn-sm btn-outline-primary' },
+          { extend: 'excel', text: 'Excel',     className: 'btn btn-sm btn-outline-success' },
+          { extend: 'pdf',   text: 'PDF',       className: 'btn btn-sm btn-outline-danger' },
+          { extend: 'print', text: 'Imprimir',  className: 'btn btn-sm btn-outline-dark' }
         ]
-      })
-    })
+      });
+
+      // Filtro por tipo usando pills
+      $('#tx-type-filters [data-type-filter]').on('click', function () {
+        $('#tx-type-filters .nav-link').removeClass('active');
+        $(this).addClass('active');
+
+        const filter = $(this).data('type-filter');
+
+        if (filter === 'all') {
+          // limpa filtro
+          table.column(3).search('').draw();
+        } else if (filter === 'IN') {
+          // coluna 3 tem o texto "Entrada"
+          table.column(3).search('Entrada').draw();
+        } else if (filter === 'OUT') {
+          // coluna 3 tem o texto "Saída"
+          table.column(3).search('Saída').draw();
+        }
+      });
+    });
   </script>
 {% endblock %}
