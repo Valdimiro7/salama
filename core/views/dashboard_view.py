@@ -438,7 +438,7 @@ def dashboard_view(request):
     # Contexto final
     # ==========================
     context = {
-        "page_title": "Salama · Microcrédito",
+        "page_title": "Salama · Investimentos",
         "segment": "dashboard",
 
         # KPIs
